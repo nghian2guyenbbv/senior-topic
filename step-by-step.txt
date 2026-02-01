@@ -1,0 +1,75 @@
+-1 - enable msql server agent
+MSSQL_AGENT_ENABLED: "true"
+
+0 - craeate a new database
+CREATE DATABASE my_db;
+
+
+1 - enable CDC for database
+use my_db;
+EXEC sys.sp_cdc_enable_db;
+
+1.1 Create employee table
+CREATE TABLE dbo.Employee (ID INT identity, name varchar(255), age int);
+
+2- enable CDC for table
+
+EXEC sys.sp_cdc_enable_table
+ @source_schema = 'dbo',
+ @source_name = 'Employee',
+ @role_name = NULL;
+ 
+3- Verify cdc status
+select name, is_cdc_enabled
+from sys.databases
+where name = 'my_db';
+
+4- check cdc if enabled for table
+select * from cdc.change_tables;
+
+
+SELECT  
+    servicename,
+    status_desc,
+    startup_type_desc
+FROM sys.dm_server_services
+WHERE servicename LIKE 'SQL Server Agent%';
+
+6- insert same database
+
+insert into dbo.Employee(name, age)
+values('nghia', 30);
+
+7 - connect database with debezium
+postman request POST 'http://localhost:8083/connectors' \
+  --header 'Content-Type: application/json' \
+  --body '{
+    "name": "sql-server-cdc-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+        "database.hostname": "mssql",
+        "database.port": "1433",
+        "database.user": "sa",
+        "database.password": "Shinhan@8",
+        "database.dbname": "my_db",
+        "database.server.name": "DESKTOP-L6HFUU9",
+        "table.include.list": "dbo.Employee",
+        "database.history.kafka.bootstrap.servers": "kafka:29092",
+        "database.history.kafka.topic": "dbhistory.sql-server-cdc",
+        "database.history.kafka.recovery.poll.interval.ms": "5000",
+        "database.history.kafka.recovery.attempts": "4",
+        "tasks.max": "1",
+        "database.encrypt": "true",
+        "database.trustServerCertificate": "true",
+        "database.applicationName": "Debezium",
+        "snapshot.mode": "initial",
+        "topic.creation.default.replication.factor": 1,
+        "topic.creation.default.partitions": 1,
+        "topic.creation.enable": true
+    }
+}'
+
+8- Update Employee table and see the change in kafka
+
+update dbo.Employee set name = 'dung';
+
