@@ -1,0 +1,32 @@
+spring:
+    application:
+        name: oauth
+    security:
+        oauth2:
+            client:
+                registration:
+                    google:
+                        client-id: 663924339410-04hkibnqpa8vavdvfhdn6n4cp3afb54g.apps.googleusercontent.com
+                        client-secret: ENC[AES256_GCM,data:wM+/RRqiWlfrS1iJLmVyCG6h47Igh2Jven5PRNMgsg4OD4M=,iv:RF6FoEVkCiSeedxGQTgTdKNOS8L4loSHDN7N7Ot4bCU=,tag:a+nvdL+HOeQC7PQgVGFJNw==,type:str]
+                        redirect-uri: http://localhost:8000/login/oauth2/code/google
+                    github:
+                        client-id: Ov23li0MHOYzlfxT0K5p
+                        client-secret: ENC[AES256_GCM,data:deLW7I9xvBaxy5+0JsBNY5HRKIwpYJimYpseLXJIA7LNCv7SYLvwQQ==,iv:G/YrbOcH8WKq9Slp/yjnB9HBHSugcU7Bkj3dksB0w2Q=,tag:wW+aRCJwx6BJWJsXNlIwVQ==,type:str]
+                        redirect-uri: http://localhost:8000/login/oauth2/code/github
+server:
+    port: 8000
+sops:
+    age:
+        - recipient: age1svk0zlz35ljh552ujztsy6xncd48ckwyezed5zgxswsn2rs7sdeqyz64nr
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiVDNvL2ZkSFlCNTlVUlIv
+            RU0vS3dqWGI3YzZBcWNtWnZaT3lDc0lpdFEwCmhuekRrWDRrY3Azd1hnTVBMNHRT
+            ekpKTFlPTURyRUJ3dXNCMzZNaTJoOG8KLS0tIGtlYjBGaXlaR0dDOXJVUU41OGd1
+            bHBvRVNoMCt0d1E4NUFiSjRrb2hjWU0KXy9T4vGHVuQxHW72ZDneTCGsW9Czo/gj
+            bPQBLeB8mwBLuhZzdpX9TdODDNJVe0lAoRC0fS6ca1yUFC+acKD27g==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-02-07T09:14:10Z"
+    mac: ENC[AES256_GCM,data:7agU/IPQjikwBeN/kUQDPhRAD6wJS8eDHC1TBdeF7bhkQBFl7MQY1vL8GjYMYkzdIdlUhuAJALyf72++LnfOqo9DyvXZ9HibiyZDIR2EqSZN6GaBWfGLsjkyhUNA28vdhzsGbmU7Q7H17MfE//zRDhRigQ2y0QCe3iuFXL+oN1o=,iv:K8fasHhbBhyRkbZdscRke2k4sCeUge6YrbSSNCjnifI=,tag:lKN8XOFszp0+sSrFOXHknA==,type:str]
+    encrypted_regex: client-secret
+    version: 3.11.0

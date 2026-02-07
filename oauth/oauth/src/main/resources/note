@@ -1,0 +1,47 @@
+-- what is EnableWebSecurity mean?
+
+
+-- config
+
+
+-- https://console.cloud.google.com/apis/credentials?project=carbide-eye-285108
+
+-- OAUH2 FLOW
+1. Client (web app) request a creatdential from Authorise server (google, github)
+2. oauth server provide a client id and client secret for client
+3. User was also trusted by oauth server (google or gihub)
+4. when user login to Client (web app) they was redirect to oauth server to verify and get token
+5. user sent included the token into request sent to resource server to get the response
+
+-- incrypt decrypt with sops
+1, install age age-keygent https://github.com/FiloSottile/age/releases
+2. move file to C:\Program Files\age\
+3. Add that folder to Environment Variables → PATH
+4. age-keygen --version
+5. install sops
+6. generate key
+mkdir %USERPROFILE%\.config\sops\age
+age-keygen -o %USERPROFILE%\.config\sops\age\keys.txt
+7. Copy the public key
+8. create .sops.yaml file
+creation_rules:
+  - encrypted_regex: 'client-secret'
+    age: age1k9xv8z...
+9. encrypt the file
+sops -e -i application.yaml
+10. rename the encrypted file
+mv application.yaml application.enc.yaml
+
+-- before run in local
+11 get private key: type %USERPROFILE%\.config\sops\age\keys.txt
+12. tell sops which key:
+setx SOPS_AGE_KEY_FILE "%USERPROFILE%\.config\sops\age\keys.txt"
+close and open terminal again
+13. decrypt file
+sops -d application.enc.yaml > application.yaml
+
+
+
+-- example age keygen
+age-keygen: warning: writing secret key to a world-readable file
+Public key: age1svk0zlz35ljh552ujztsy6xncd48ckwyezed5zgxswsn2rs7sdeqyz64nr

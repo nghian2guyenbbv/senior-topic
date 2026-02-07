@@ -1,0 +1,3 @@
+creation_rules:
+  - encrypted_regex: 'client-secret'
+    age: age1svk0zlz35ljh552ujztsy6xncd48ckwyezed5zgxswsn2rs7sdeqyz64nr
