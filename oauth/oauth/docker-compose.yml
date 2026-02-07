@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  oauth-app:
+   build: .
+   image: oauth-app
+   container_name: oauth-java
+   ports:
+    - "8000:8000"
+   environment:
+    SPRING_PROFILES_ACTIVE: default
+   restart: unless-stopped 

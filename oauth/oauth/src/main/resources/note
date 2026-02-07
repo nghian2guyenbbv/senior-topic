@@ -40,6 +40,14 @@ close and open terminal again
 13. decrypt file
 sops -d application.enc.yaml > application.yaml
 
+--- DOCKER CONTAINER---
+14. Write a docker file
+15. build docker image
+docker build -t oauth-java17 .
+16. Run docker container
+docker run -p 8000:8000 -v ./application.yaml:/app/application.yaml oauth-java17
+17. add docker compose file at the same level as Dockerfile
+18. docker-compose down / docker-compose up
 
 
 -- example age keygen
