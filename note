@@ -1,0 +1,15 @@
+https://github.com/danvega/golf-scheduler/blob/main/resource-server/src/main/resources/application.yaml
+Oauth2 flow sumarize
+1. Client register on oauthorization server and receive the client id and client secret key
+2. when user request client -> client redirect user to oauth to login Google / github ..
+3. auth server return code to client -> client sent code + client secrect to auth server -> receive acess token ??
+4. user send requst included access token in request to resource server
+-> resource server request oauthorization server to verify (if opaque token)
+
+https://chatgpt.com/c/698ac5a5-37d8-8323-9ee1-4cbbf51a1d5f
+
+opaque and jwt ?
++ opaque token -> resource server verify token by call to oauthorization server
++ jwt token -> verify by signature -> public + private key
+
+How FE can hide the key in browser to encrypt and decrypt?
