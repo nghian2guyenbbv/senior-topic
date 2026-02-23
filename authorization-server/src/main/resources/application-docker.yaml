@@ -1,0 +1,5 @@
+spring:
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://authorization-server:9000
