@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  authorization-server:
+    build:
+      context: ./authorization-server
+      dockerfile: Dockerfile
+    image: authorization-server
+    container_name: authorization-server
+    ports: 
+      - "9000:9000"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    restart: unless-stopped 
+  client-application:
+   build: 
+    context: ./client-application
+    dockerfile: Dockerfile
+   image: client-application
+   container_name: client-application
+   ports:
+    - "8080:8080"
+   environment:
+    SPRING_PROFILES_ACTIVE: docker
+   restart: unless-stopped 
+  resource-server:
+   build: 
+    context: ./resource-server
+    dockerfile: Dockerfile
+   image: resource-server
+   container_name: resource-server
+   ports:
+    - "8081:8081"
+   environment:
+    SPRING_PROFILES_ACTIVE: docker
+   restart: unless-stopped 
