@@ -2,7 +2,11 @@ spring:
   security:
     oauth2:
       resourceserver:
-        jwt:
-          issuer-uri: http://authorization-server:9000
+        opaquetoken:
+          client-id: golf-client
+          client-secret: golf-secret
+          introspection-uri: http://authorization-server:9000
+intro-spect:
+  uri: http://authorization-server:9000/oauth2/introspect
 server:
   port: 8081
