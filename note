@@ -13,3 +13,4 @@ opaque and jwt ?
 + jwt token -> verify by signature -> public + private key
 
 How FE can hide the key in browser to encrypt and decrypt?
+

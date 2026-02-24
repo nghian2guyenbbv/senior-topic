@@ -1,0 +1,2 @@
+curl --location 'http://localhost:8080/lessons' \
+--header 'Cookie: JSESSIONID=D2CACB29E45F02A5380D12665C5A0E3A'

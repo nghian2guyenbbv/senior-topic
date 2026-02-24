@@ -1,0 +1,23 @@
+1. Create a oauth project with 3 modules:
+        + <module>authorization-server</module>
+                  <module>client-application</module>
+                  <module>resource-server</module>
+        + crate 3 module
+2. create authorization-server project
+    + dependencies: starter authori-server / starter-security/ starter-security-test
+    + config : application.yaml / spring.security.oauth2.issuer
+    + port : 9000
+    + config : registeredClientRepository[clientId/clientSecret/authenticateMode/authorizationGrantType/scope??]
+    / securityFilterChain[http.DefaultFormlogin] beans
+3. Create resource server module
+    + dependencies: starter-resource-server/ starter-web/ starter-security/ starter-security-test
+    + config application.yaml : spring.security.oauth2.resourceserver.[jwt/opaque]/issuer-uri
+    + config securityFilterChain[authorizeHttpRequests/oauth2ResourceServer]
+    + /lessons Controller
+    + port 8081
+
+4. Create client module
+    + dependencies: starter-oauth2-client/ starter-web
+    + Config : RestClientConfig[requestInterceptor-oauthManager]/ securityFilterChain[permitAll/ disable-csrf]
+    + Controller : lesson -> call lessons(resource-server)[clientRegistrationId]
+    + Config: spring.oauth2.client.registration[client(client-id, client-secrect/authorization-grant-type)/provider]
