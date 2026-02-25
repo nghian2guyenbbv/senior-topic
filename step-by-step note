@@ -1,0 +1,16 @@
+1. create 3 module
+        + client
+        + resource server
+        + authorization server [2 security filter chain - 1 login page - 1 for client credential]
+2. from browser : http://localhost:8080/login/oauth2/code/golf-client
+    request code for authorize
+3. insert user/pass -> copy code
+4. request acess-token with this code
+
+curl --location 'http://localhost:9000/oauth2/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--header 'Authorization: Basic Z29sZi1jbGllbnQ6Z29sZi1zZWNyZXQ=' \
+--header 'Cookie: JSESSIONID=EA2B94F7DBB0511FC0FBF4EC6D79F220' \
+--data-urlencode 'grant_type=authorization_code' \
+--data-urlencode 'code=rmORe932Y8shHeSIfUsie2_cnqk0OISvsFd2-jzyuVkFNX7cs08QpdxMVho0_Dn5LBiWsbLJykQEcUPd_X2BP05ZnOqG2l2Uy6CtNGzdifoQDI8YPbtK9NdH7gnu8L25' \
+--data-urlencode 'redirect_uri=http://localhost:8080/login/oauth2/code/golf-client'

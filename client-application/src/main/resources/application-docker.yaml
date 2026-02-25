@@ -7,10 +7,12 @@ spring:
             provider: golf-provider
             client-id: golf-client
             client-secret: golf-secret
-            authorization-grant-type: client_credentials
+            authorization-grant-type: authorization_code
+            redirect-uri: http://client-application:8080/login/oauth2/code/golf-client
             scope: read
         provider:
           golf-provider:
+            authorization-uri: http://authorization-server:9000/oauth2/authorize
             token-uri: http://authorization-server:9000/oauth2/token
 resource-server:
   url: http://resource-server:8081/lessons

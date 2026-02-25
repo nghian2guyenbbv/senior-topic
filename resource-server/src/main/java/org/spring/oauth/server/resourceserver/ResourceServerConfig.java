@@ -14,11 +14,9 @@ public class ResourceServerConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
             .authorizeHttpRequests(authorize -> authorize
-                    .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(Customizer.withDefaults())
-            );
+                    .anyRequest()
+                .authenticated()
+            ).oauth2ResourceServer(oauth->oauth.jwt(Customizer.withDefaults()));
     return http.build();
   }
 }
