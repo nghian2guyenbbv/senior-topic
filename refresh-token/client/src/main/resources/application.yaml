@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: client
+  security:
+    oauth2:
+      client:
+        registration:
+         nghia-client:
+           provider: nghia-provider
+           client-id: nghia-client
+           client-secret: nghia-secret
+           authorization-grant-type: authorization_code
+           redirect-uri: http://localhost:8080/login/oauth2/code/nghia-client
+           scope: read
+        provider:
+          nghia-provider:
+            authorization-uri: http://localhost:9000/oauth2/authorize
+            token-uri: http://localhost:9000/oauth2/token
+resource-server:
+  url: http://localhost:8081/lessons
+logging:
+  level:
+    org.springframework.security: TRACE
