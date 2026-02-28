@@ -1,0 +1,35 @@
++ Step 1: create oauthorization project
+       config in pom file: pakaging, modules
++ Step 2: cteate oauth module
+        dependencies: oauthorization, security
++ Step 3: config authorization module -> issuer
++ Step 4: create Security config class
+    + UserDetailService bean
+    + RegisteClientRepo bean:
+        - authenType: basic credential
+        - autho-type: auth-code, refresh-token
+        - scope
+        - disable pcke
+        - redirectUri: http://localhost:8080/lgoin/oauth2/code/client-id
+        - client-id/clientSecret
+        - tokenSetting
+    + Security filter bean:
+        - Order 1: default filter chain with [securityMatcher/ exceptionHandling]
+        - Order 2: default filter chain with form login
+    + [Optional] passwordEncoder
+    + [Optional] jwkSource - if using jwt
+
++ request authorization code
+http://localhost:9000/oauth2/authorize?
+response_type=code
+&client_id=nghia-client
+&scope=read
+&redirect_uri=http://localhost:8080/login/oauth2/code/nghia-client
+
++ request access/refresh-token
+curl --location 'http://localhost:9000/oauth2/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--header 'Authorization: Basic bmdoaWEtY2xpZW50Om5naGlhLXNlY3JldA==' \
+--data-urlencode 'grant_type=authorization_code' \
+--data-urlencode 'code=eBMxNExpMNoVmawsrZnXTUmHjOOeXUPFVdmj98uVR5VgqEzrbUB-arlyNUfJx4DrA1jovfvgqBhGy4J7bwJ0kd9NzMUg_HepG0JLF2twql-ztXHeAifLqtquj9VG6llY' \
+--data-urlencode 'redirect_uri=http://localhost:8080/login/oauth2/code/nghia-client'
