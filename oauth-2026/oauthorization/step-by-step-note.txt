@@ -33,3 +33,7 @@ curl --location 'http://localhost:9000/oauth2/token' \
 --data-urlencode 'grant_type=authorization_code' \
 --data-urlencode 'code=eBMxNExpMNoVmawsrZnXTUmHjOOeXUPFVdmj98uVR5VgqEzrbUB-arlyNUfJx4DrA1jovfvgqBhGy4J7bwJ0kd9NzMUg_HepG0JLF2twql-ztXHeAifLqtquj9VG6llY' \
 --data-urlencode 'redirect_uri=http://localhost:8080/login/oauth2/code/nghia-client'
+
+Step 5: update 'code', request access token
+
+Step 6 : create docker file
