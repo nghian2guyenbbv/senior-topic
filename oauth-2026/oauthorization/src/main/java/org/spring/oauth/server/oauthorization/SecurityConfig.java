@@ -4,6 +4,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -34,6 +35,10 @@ import java.util.UUID;
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
+
+  @Value("${app.redirect.uri}")
+  private String redirectUri;
+
   @Bean
   @Order(1)
   public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -72,7 +77,7 @@ public class SecurityConfig {
         .clientSettings(ClientSettings.builder()
             .requireProofKey(false)
             .build())
-        .redirectUri("http://localhost:8080/login/oauth2/code/nghia-client")
+        .redirectUri(redirectUri)
         .scope("read")
         .build();
     return new InMemoryRegisteredClientRepository(client);

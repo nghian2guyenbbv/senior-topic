@@ -1,0 +1,14 @@
+version: "3.9"
+
+services: 
+  oauthorization:
+    build:
+      context: ./oauthorization
+      dockerfile: Dockerfile
+    image: oauthorization
+    container_name: authorization
+    ports:
+      - "9000:9000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    restart: unless-stopped  

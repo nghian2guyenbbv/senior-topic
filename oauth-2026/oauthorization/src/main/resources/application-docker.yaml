@@ -4,7 +4,7 @@ spring:
   security:
     oauth2:
       authorizationserver:
-        issuer: http://localhost:9000
+        issuer: http://oauthorization:9000
 server:
   port: 9000
 logging:
