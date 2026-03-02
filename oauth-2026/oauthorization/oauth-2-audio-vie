@@ -1,0 +1,30 @@
+Luồng Oauth2 tổng quan:
+Bao gồm các thành phần sau:
+1. Authorization Server module: Đây là "ông chủ" giữ chìa khóa.
+Authorize server đảm nhận việc xác thực người dùng (hiển thị trang login), nhận sự đồng ý của người dùng và cấp phát Token.
+2. Resource Server module: Đây là "nhà kho" chứa dữ liệu (API).
+Nó chỉ nhận Access Token từ Client, kiểm tra xem token đó có hợp lệ không (verify với Authorize server hoặc tự verify nếu là JWT) rồi mới trả dữ liệu.
+3. Client: Có thể là Browser (Single Page App), Mobile App, hoặc Server-side App.
+
+Các phương thức Authorize grant type phổ biến:
+1. Luồng Client Credentials (Machine-to-Machine)
+
+Đặc điểm: Dùng khi không có người dùng cuối (ví dụ: Service A gọi Service B).
+
+Xác thực: Chỉ dùng client_id và client_secret của chính ứng dụng đó. Không hề có khái niệm người dùng cuối ở đây.
+
+Luồng đi: Client gửi ID/Secret thẳng tới authorization server-> authorization server trả về Access Token.
+
+
+2. Luồng Authorization Code (Dành cho User thật)
+Đây là luồng bảo mật nhất và phổ biến nhất. Có một điểm bạn cần lưu ý: User luôn login tại Authorization Server, không phải Resource Server.
+
+Bước 1: Redirect: User nhấn "Login" trên Client, Client redirect User sang Authorization Server (không phải Resource server).
+
+Bước 2: Login & Consent: User nhập pass tại Authorization server và đồng ý cho phép ứng dụng truy cập dữ liệu.
+
+BƯớc 3: Auth Code: Authorization Server redirect User quay lại Client kèm theo một mã tạm gọi là Authorization Code.
+
+Bước 4: Exchange: Client cầm mã Code này + client_secret gửi lên Authorization server để đổi lấy Access Token và Refresh Token.
+
+BƯớc 5: Access: Client dùng Access Token để gọi API tại Resource Server.
