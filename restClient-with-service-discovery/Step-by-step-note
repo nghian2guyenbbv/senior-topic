@@ -12,3 +12,4 @@ The order-client call order-service thought the service-registry
    application config
             register-with-eureka: false // no need register server with eureka
             fetch-registry: false    // no fetch from other registry
+6. Add spring security/ oauthorization-server into order-client
