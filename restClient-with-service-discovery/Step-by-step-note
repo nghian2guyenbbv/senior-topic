@@ -1,0 +1,7 @@
+The order-client call order-service thought the service-registry
+1. Create rest-client-with-service-registry project
+2. Create 3 module order-client, order-service, service-discovery
+3. Create order client
+    dependencies: rest-client, http-client, eureka-client, loadbalancer, web
+    Config 2 restclient bean: 1 for Loadbalance, 1 is Primary restclient
+    create order client forward request to order-service
