@@ -5,3 +5,10 @@ The order-client call order-service thought the service-registry
     dependencies: rest-client, http-client, eureka-client, loadbalancer, web
     Config 2 restclient bean: 1 for Loadbalance, 1 is Primary restclient
     create order client forward request to order-service
+4. Create order-service
+    create controller
+5. Create service-discovery
+   dependencies netflix-eureka-server
+   application config
+            register-with-eureka: false // no need register server with eureka
+            fetch-registry: false    // no fetch from other registry
