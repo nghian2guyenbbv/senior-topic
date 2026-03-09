@@ -21,3 +21,14 @@
     + Config : RestClientConfig[requestInterceptor-oauthManager]/ securityFilterChain[permitAll/ disable-csrf]
     + Controller : lesson -> call lessons(resource-server)[clientRegistrationId]
     + Config: spring.oauth2.client.registration[client(client-id, client-secrect/authorization-grant-type)/provider]
+
+5. Testing
+5.1 - get opaque token:
+    curl -X POST http://localhost:9000/oauth2/token \
+    -u golf-client:golf-secret \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "grant_type=client_credentials&scope=read"
+5.2 - get lessons with token
+curl --location 'http://localhost:8081/lessons' \
+--header 'Authorization: Bearer eyJraWQiOiI1MmZiMzdiZS1mMDM4LTRlYmMtYmMwZC00Yjg4MTIwMjgxYzQiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJnb2xmLWNsaWVudCIsImF1ZCI6ImdvbGYtY2xpZW50IiwibmJmIjoxNzcyOTY0NDE0LCJzY29wZSI6WyJyZWFkIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTc3Mjk2NDcxNCwiaWF0IjoxNzcyOTY0NDE0LCJqdGkiOiIzZjllMjM1NC0wZGMzLTQ1NzgtYjI1Zi01M2RiY2JmZDkyZjgifQ.TbpHKoQPoEoxk-fp3B3Zgr18Lb9RIyQt5JD_YimiyoPe_N9nxLnL-HDBlq7um9UN38GMm-YJQrac-doTJ061SimMKF5jFB_A8uaQFXVR1akzFjvRhcg5wow4LtRJsnGIU_Xubp4ocN6x50I3XzFFevzqegncU9TP7jytkhUbDlrIgkuYG20rNxGBLqRuRXMLnV9LZoTkuegUMKh6dKE2Q5OOfUSQfXN3STczg3ziNXmq1DPvosfn91IzygxUmq48E636g78Hw4sjxNWnq1U-Z4Ijg_cKXHuJj23eBthLNqFMxSRSxYne-bSZADortlphDmgYKoD0TPJ6ElQOFnfStA' \
+--header 'Cookie: JSESSIONID=111B4BD0BCDDC200D68932FC9080BEDF'
