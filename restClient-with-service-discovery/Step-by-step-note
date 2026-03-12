@@ -13,3 +13,11 @@ The order-client call order-service thought the service-registry
             register-with-eureka: false // no need register server with eureka
             fetch-registry: false    // no fetch from other registry
 6. Add spring security/ oauthorization-server into order-client
+
+7. order-service -> to resource server
+   order-authorization-server -> add security
+   order client -> service-registry -> oauthorization-server
+
+8. Testing
+curl --location 'http://localhost:8082/api/client/orders' \
+--header 'Cookie: JSESSIONID=5FEC441648A101D396CDBC28F434FAC7'
