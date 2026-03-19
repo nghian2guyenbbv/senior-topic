@@ -1,0 +1,32 @@
+-- Flow--
+Components: identity prodiver/ gateway/ client/ service-registry
+
+
+
+
+
+
+-- testing --
+1. create user
+curl --location 'http://localhost:8080/auth/register' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D' \
+--data-raw '{
+    "name":"Basant",
+    "password":"Pwd1",
+    "email":"basant@gmail.com"
+}'
+
+2. request token
+curl --location --request POST 'http://localhost:9898/auth/token' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D' \
+--data-raw '{
+    "username":"Basant",
+    "password":"Pwd1"
+}'
+
+3. access swigg app
+curl --location --request GET 'http://localhost:8080/swiggy/37jbd832' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJCYXNhbnQiLCJpYXQiOjE2NzkwNTU4MDIsImV4cCI6MTY3OTA1NzYwMn0.Q0bwS5_16q1Z8K-p_flpmyRoJNFCyOhU2AMKSNYh66o' \
+--header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D'
