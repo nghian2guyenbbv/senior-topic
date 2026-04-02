@@ -1,0 +1,48 @@
+1. pull mysql image and run with password is Password, database is
+ + docker pull mysql:8
+ + docker run -d \
+     --name mysql-server \
+     -p 3306:3306 \
+     -e MYSQL_ROOT_PASSWORD=Password \
+     -e MYSQL_DATABASE=jwtgateway \
+     mysql:8
+2. Create project with modules:
+    + service registry
+        dependencies: eureka
+    + identity-service (register user/ generate token/ verify token):
+        dependencies: security/ web/ eureka client/ data jpa/ jwt/ mysql connector
+    + restaurant-service:
+        service name: RESTAURANT-SERVICE
+        dependencies: web/ eureka client
+    + swiggapp (forward controller to restaurant service)
+        service name: SWIGGY-APP
+        dependencies: web/ euraka client
+    + swiggy-gateway:
+        dependencies: spring gateway/ web flux, actuor, eureka client
+3. jwt token validating in microservice summary
+
+4. testing
+--register user--
+curl --location 'http://localhost:8080/auth/register' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D' \
+--data-raw '{
+    "name":"Basant",
+    "password":"Pwd1",
+    "email":"basant@gmail.com"
+}'
+
+-- request token --
+curl --location 'http://localhost:9898/auth/token' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D' \
+--data '{
+    "username":"Basant",
+    "password":"Pwd1"
+}'
+
+-- get order --
+
+    curl --location 'http://localhost:8080/swiggy/37jbd832' \
+    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJCYXNhbnQiLCJpYXQiOjE3NzM1NjYwMTQsImV4cCI6MTc3MzU2NzgxNH0.iOveiATxxZgrjjqDK_8W_PU2B4LP4wZJaxPBnnkmsU8' \
+    --header 'Cookie: JSESSIONID=7CE91EE75A65277C0DCB6C5736C5DF5D'

@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  jwtsql:
+    image: mysql:8
+    container_name: jwtsql
+    environment:
+      MYSQL_ROOT_PASSWORD: Password
+      MYSQL_DATABASE: jwtgateway
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+    networks:
+      - micro-net  
+  swiggy-service-registry: 
+    build:
+      context: ./swiggy-service-registry
+      dockerfile: Dockerfile
+    image: swiggy-service-registry
+    container_name: swiggy-service-registry
+    ports:
+      - "8761:8761"       
+    networks:
+      - micro-net  
+  identity-service: 
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    image: identity-service
+    container_name: identity-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      swiggy-service-registry:
+        condition: service_started
+      jwtsql:
+        condition: service_healthy
+    ports:
+      - "9898:9898"
+    networks:
+      - micro-net  
+  restaurant-service: 
+    build:
+      context: ./restaurant-service
+      dockerfile: Dockerfile
+    image: restaurant-service
+    container_name: restaurant-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - swiggy-service-registry
+    ports:
+      - "8082:8082"
+    networks:
+      - micro-net  
+  swiggy-app: 
+    build:
+      context: ./swiggy-app
+      dockerfile: Dockerfile
+    image: swiggy-app
+    container_name: swiggy-app
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - swiggy-service-registry  
+    ports:
+      - "8081:8081"  
+    networks:
+      - micro-net  
+  swiggy-gateway: 
+    build:
+      context: ./swiggy-gateway
+      dockerfile: Dockerfile
+    image: swiggy-gateway
+    container_name: swiggy-gateway
+    depends_on:
+      - swiggy-service-registry
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"  
+    networks:
+      - micro-net
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "9090:8080"
+networks:
+  micro-net:       
+               
