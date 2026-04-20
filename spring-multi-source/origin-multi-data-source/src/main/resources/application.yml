@@ -1,0 +1,24 @@
+spring:
+  datasource-write:
+    driver-class-name: org.postgresql.Driver
+    jdbc-url: jdbc:postgresql://localhost:5432/demo
+    username: postgres
+    password: password
+    platform: postgresql
+    hikari:
+      idle-timeout: 10000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: WriteHikariPool
+
+  datasource-read:
+    driver-class-name: org.postgresql.Driver
+    jdbc-url: jdbc:postgresql://localhost:5433/demo
+    username: postgres
+    password: password
+    platform: postgresql
+    hikari:
+      idle-timeout: 10000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: ReadHikariPool

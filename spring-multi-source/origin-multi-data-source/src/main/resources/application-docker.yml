@@ -1,0 +1,30 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource-write:
+    driver-class-name: org.postgresql.Driver
+    # Replace 'db-write-service' with the service name in your docker-compose
+    jdbc-url: jdbc:postgresql://postgres-primary:5432/demo
+    username: ${DB_WRITE_USERNAME:postgres}
+    password: ${DB_WRITE_PASSWORD:password}
+    platform: postgresql
+    hikari:
+      idle-timeout: 10000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: WriteHikariPool
+
+  datasource-read:
+    driver-class-name: org.postgresql.Driver
+    # Replace 'db-read-service' with the service name in your docker-compose
+    jdbc-url: jdbc:postgresql://postgres-replica:5432/demo
+    username: ${DB_READ_USERNAME:postgres}
+    password: ${DB_READ_PASSWORD:password}
+    platform: postgresql
+    hikari:
+      idle-timeout: 10000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: ReadHikariPool

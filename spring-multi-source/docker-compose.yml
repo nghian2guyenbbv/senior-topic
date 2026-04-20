@@ -1,0 +1,73 @@
+x-common:
+  &x-common
+  image: postgres:15
+  user: postgres
+  restart: always
+  networks:
+    - my-network
+  healthcheck:
+    test: 'pg_isready -U user --dbname=postgres'
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+services:
+#  multi-source:
+#    build:
+#      context: ./origin-multi-data-source
+#      dockerfile: Dockerfile
+#    image: multi-data-source-app
+#    environment:
+#      SPRING_PROFILES_ACTIVE: docker
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      postgres-primary:
+#        condition: service_completed_successfully
+#      postgres-replica:
+#        condition: service_completed_successfully
+  postgres-primary:
+    <<: *x-common
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: demo
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: |
+      postgres 
+      -c wal_level=replica 
+      -c hot_standby=on 
+      -c max_wal_senders=10 
+      -c max_replication_slots=10 
+      -c hot_standby_feedback=on
+    volumes:
+      - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+
+  postgres-replica:
+    <<: *x-common
+    ports:
+      - 5433:5432
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: postgres_user_for_db_read
+    command: |
+      bash -c "
+      until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=postgres-primary --port=5432
+      do
+      echo 'Waiting for primary to connect...'
+      sleep 1s
+      done
+      echo 'Backup done, starting replica...'
+      chmod 0700 /var/lib/postgresql/data
+      postgres
+      "
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+
+networks:
+  my-network:
+    driver: bridge
