@@ -12,24 +12,12 @@ x-common:
     retries: 5
 
 services:
-#  multi-source:
-#    build:
-#      context: ./origin-multi-data-source
-#      dockerfile: Dockerfile
-#    image: multi-data-source-app
-#    environment:
-#      SPRING_PROFILES_ACTIVE: docker
-#    ports:
-#      - "8080:8080"
-#    depends_on:
-#      postgres-primary:
-#        condition: service_completed_successfully
-#      postgres-replica:
-#        condition: service_completed_successfully
   postgres-primary:
     <<: *x-common
     ports:
       - 5432:5432
+    networks:
+      - micro-net
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: demo
@@ -45,6 +33,11 @@ services:
       -c hot_standby_feedback=on
     volumes:
       - ./00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d demo && psql -U postgres -d demo -c 'SELECT 1'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres-replica:
     <<: *x-common
@@ -53,6 +46,8 @@ services:
     environment:
       PGUSER: replicator
       PGPASSWORD: postgres_user_for_db_read
+    networks:
+      - micro-net
     command: |
       bash -c "
       until pg_basebackup --pgdata=/var/lib/postgresql/data -R --slot=replication_slot --host=postgres-primary --port=5432
@@ -67,7 +62,27 @@ services:
     depends_on:
       postgres-primary:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d demo && psql -U postgres -d demo -tAc 'SELECT pg_is_in_recovery()' | grep -q t" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  multi-source:
+    build:
+      context: ./origin-multi-data-source
+      dockerfile: Dockerfile
+    image: multi-data-source-app
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    networks:
+      - micro-net
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      postgres-replica:
+        condition: service_healthy
 
 networks:
-  my-network:
-    driver: bridge
+  micro-net:
