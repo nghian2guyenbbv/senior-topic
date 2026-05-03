@@ -1,0 +1,8 @@
+https://github.com/ehsaniara/spring-boot-multi-data-source
+
+Testing:
+Create customer:
+curl -H "Content-Type: application/json" --request POST --data '{"name":"Jay"}'   http://localhost:8080/customer
+
+Get Customer:
+curl --request GET  http://localhost:8080/customer/1
