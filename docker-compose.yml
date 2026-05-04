@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-nghiamysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Password
+      MYSQL_DATABASE: nghiamysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - micro-net
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: order-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "9191:9191"
+    container_name: order-container
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - micro-net
+networks:
+  micro-net:
+volumes:
+  mysql_data:

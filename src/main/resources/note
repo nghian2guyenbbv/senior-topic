@@ -1,0 +1,14 @@
+-- create order
+curl --location 'http://localhost:9191/orders' \
+--header 'Content-Type: application/json' \
+--data '{
+    "orderName": "order",
+    "items": [
+        {
+            "itemName": "item1"
+        }
+    ]
+}'
+
+-- search order
+curl --location 'http://localhost:9191/orders/search?product=item1'
