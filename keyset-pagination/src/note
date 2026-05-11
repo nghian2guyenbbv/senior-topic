@@ -1,0 +1,10 @@
++ Offset pagination uses OFFSET and LIMIT/pageSize. The database still needs to scan and skip records before the offset.
+    Easy to implement
+    Supported natively by Spring Data JPA and JPA
+    Supports page numbers (page 1, 2, 3...)
+    Poor performance and scalability for large datasets
++ Keyset pagination uses the last record (cursor) to continue fetching data.
+    Better performance and scalability because the database can use indexes directly
+    More consistent for real-time data
+    Not natively supported by JPA
+    Does not support direct page numbers easily
