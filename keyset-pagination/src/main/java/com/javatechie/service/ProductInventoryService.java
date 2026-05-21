@@ -38,9 +38,9 @@ public class ProductInventoryService {
         boolean hasNext = items.size() == size;
 
         //determine the next cursor
-
+        var lastSize = items.size() - 1;
         Long nextCursor = hasNext
-                ? items.get(items.size() - 1).getId()
+                ? items.get(lastSize).getId()
                 : null;
 
         return new CursorPageResponse<>(

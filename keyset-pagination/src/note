@@ -8,3 +8,25 @@
     More consistent for real-time data
     Not natively supported by JPA
     Does not support direct page numbers easily
+
+testing:
+curl --location --request GET 'http://localhost:9191/api/products/cursor?cursor=0&%3Fsize=10' \
+--header 'Accept: application/json' \
+--header 'Accept-Language: de' \
+--header 'Access-Control-Max-Age: 3600' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsic2FnLXJlc3QiXSwidXNlcl9uYW1lIjoiMzQwNjA5Iiwic2NvcGUiOlsicmVhZCIsIndyaXRlIl0sInNhbGVzX29uYmVoYWxmIjpudWxsLCJsb2NhdGVkX2FmZmlsaWF0ZSI6IndiYiIsImV4cCI6MTcyMTY1OTMzNiwiYXV0aG9yaXRpZXMiOlsiVVNFUl9BRE1JTiJdLCJqdGkiOiI1ODYwOTZjMS02YWM2LTQ4MGUtYTdiMy0xOTNkZGRiYjA4MjgiLCJjbGllbnRfaWQiOiJlc2hvcC13ZWIiLCJ2aXNpdF9yZWdpc3RyYXRpb24iOm51bGx9.-Dvmr13690x9k2spHmhJw5fJLZVCFIIJaiHIgLzrQR8' \
+--header 'Connection: keep-alive' \
+--header 'Content-Type: application/json' \
+--header 'Origin: http://localhost:4200' \
+--header 'Referer: http://localhost:4200/' \
+--header 'Sec-Fetch-Dest: empty' \
+--header 'Sec-Fetch-Mode: cors' \
+--header 'Sec-Fetch-Site: same-site' \
+--header 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' \
+--header 'X-Client-Dms: false' \
+--header 'X-Client-Version: 1.1.55.0.1' \
+--header 'X-SAG-Request-Id: 90a9403f-0a93-4fc5-9d02-196e2ef9d89e' \
+--header 'sec-ch-ua: "Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"' \
+--header 'sec-ch-ua-mobile: ?0' \
+--header 'sec-ch-ua-platform: "Windows"' \
+--data '{"orderNumber":"AU07114238803","orderId":"500927","companyName":"Walchli-Bollier-Bulach","customerNr":"5101444"}'
