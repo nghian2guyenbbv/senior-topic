@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CompletableFuture vs Virtual Threads — Java 21</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2e3147;
+      --accent1: #6c8ef5;
+      --accent2: #4ecdc4;
+      --accent3: #f7c59f;
+      --red: #ff6b6b;
+      --green: #51cf66;
+      --yellow: #ffd43b;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #1a1d27 0%, #12151f 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 56px 24px 40px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: rgba(108,142,245,0.15);
+      color: var(--accent1);
+      border: 1px solid rgba(108,142,245,0.35);
+      border-radius: 999px;
+      padding: 4px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero h1 span.cf  { color: var(--accent1); }
+    .hero h1 span.vt  { color: var(--accent2); }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1180px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── TL;DR CARDS ── */
+    .tldr-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 52px;
+    }
+    @media(max-width:640px){ .tldr-grid { grid-template-columns: 1fr; } }
+
+    .tldr-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .tldr-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tldr-card.cf h3 { color: var(--accent1); }
+    .tldr-card.vt h3 { color: var(--accent2); }
+    .tldr-card p { color: var(--muted); font-size: 0.93rem; line-height: 1.65; }
+    .tldr-card .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+    .tag.blue  { color: var(--accent1); border-color: rgba(108,142,245,0.4); background: rgba(108,142,245,0.08); }
+    .tag.teal  { color: var(--accent2); border-color: rgba(78,205,196,0.4);  background: rgba(78,205,196,0.08);  }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 52px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead tr {
+      background: rgba(255,255,255,0.03);
+    }
+    thead th {
+      padding: 16px 20px;
+      text-align: left;
+      font-size: 0.8rem;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    thead th.cf-col { color: var(--accent1); }
+    thead th.vt-col { color: var(--accent2); }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    td { padding: 14px 20px; vertical-align: top; line-height: 1.6; }
+    td:first-child { color: var(--accent3); font-weight: 600; white-space: nowrap; width: 180px; }
+    td:not(:last-child) { border-right: 1px solid var(--border); }
+
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+    .pill.good   { background: rgba(81,207,102,0.15); color: var(--green); }
+    .pill.bad    { background: rgba(255,107,107,0.15); color: var(--red);   }
+    .pill.ok     { background: rgba(255,212,59,0.15);  color: var(--yellow);}
+    .pill.na     { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    /* ── WHEN TO USE ── */
+    .when-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 52px;
+    }
+    @media(max-width:640px){ .when-grid { grid-template-columns: 1fr; } }
+
+    .when-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .when-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+    .when-card.cf h3 { color: var(--accent1); }
+    .when-card.vt h3 { color: var(--accent2); }
+    .when-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .when-card ul li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.9rem; color: var(--text); line-height: 1.5;
+    }
+    .when-card ul li .icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── CODE SIDE BY SIDE ── */
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 52px;
+    }
+    @media(max-width:700px){ .code-grid { grid-template-columns: 1fr; } }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .code-block .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600;
+    }
+    .code-block.cf .code-header { color: var(--accent1); }
+    .code-block.vt .code-header { color: var(--accent2); }
+    .code-block pre {
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+
+    /* Syntax highlight helpers */
+    .kw  { color: #c792ea; }
+    .cl  { color: #82aaff; }
+    .fn  { color: #82b1ff; }
+    .st  { color: #c3e88d; }
+    .cm  { color: #546e7a; font-style: italic; }
+    .nb  { color: #f78c6c; }
+    .an  { color: #ffcb6b; }
+
+    /* ── SUMMARY BOX ── */
+    .summary-box {
+      background: linear-gradient(135deg, rgba(108,142,245,0.08), rgba(78,205,196,0.08));
+      border: 1px solid rgba(108,142,245,0.25);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 52px;
+    }
+    .summary-box h3 { font-size: 1.2rem; margin-bottom: 12px; }
+    .summary-box p  { color: var(--muted); font-size: 0.95rem; line-height: 1.7; max-width: 700px; margin: 0 auto; }
+    .summary-box .highlight { color: var(--accent2); font-weight: 600; }
+
+    /* ── SPRING BOOT TIP ── */
+    .tip-box {
+      background: rgba(81,207,102,0.06);
+      border: 1px solid rgba(81,207,102,0.25);
+      border-radius: 14px;
+      padding: 24px 28px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .tip-box .tip-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .tip-box h4 { color: var(--green); font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .tip-box p  { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+    .tip-box code {
+      background: rgba(255,255,255,0.07);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: monospace;
+      color: var(--green);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">☕ Java 21 Study Guide</div>
+  <h1>
+    <span class="cf">CompletableFuture</span>
+    <span style="color:#4a5568"> vs </span>
+    <span class="vt">Virtual Threads</span>
+  </h1>
+  <p>Understand when to use each concurrency model in modern Java applications.</p>
+</div>
+
+<div class="container">
+
+  <!-- TL;DR -->
+  <div class="section-title">⚡ TL;DR</div>
+  <div class="tldr-grid">
+    <div class="tldr-card cf">
+      <h3>🔵 CompletableFuture</h3>
+      <p>
+        A non-blocking, callback-based API introduced in Java 8. You chain operations
+        (<code style="color:var(--accent1)">thenApply</code>, <code style="color:var(--accent1)">thenCompose</code>,
+        <code style="color:var(--accent1)">allOf</code>) to compose async pipelines without blocking OS threads.
+        Powerful, but can become complex and hard to read.
+      </p>
+      <div class="tag-list">
+        <span class="tag blue">Java 8+</span>
+        <span class="tag blue">Non-blocking</span>
+        <span class="tag blue">Callback chains</span>
+        <span class="tag blue">Pipeline composition</span>
+      </div>
+    </div>
+    <div class="tldr-card vt">
+      <h3>🟢 Virtual Threads</h3>
+      <p>
+        Lightweight threads managed by the JVM (Project Loom), available as a preview
+        in Java 19-20 and <strong style="color:var(--accent2)">stable in Java 21</strong>.
+        Write plain blocking code — the JVM parks the virtual thread under the hood,
+        keeping OS threads free.
+      </p>
+      <div class="tag-list">
+        <span class="tag teal">Java 21 GA</span>
+        <span class="tag teal">Blocking-friendly</span>
+        <span class="tag teal">Readable code</span>
+        <span class="tag teal">Project Loom</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="section-title">📊 Feature Comparison</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="cf-col">🔵 CompletableFuture</th>
+          <th class="vt-col">🟢 Virtual Threads</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Introduced</td>
+          <td>Java 8 (2014)</td>
+          <td>Java 21 GA (2023)</td>
+        </tr>
+        <tr>
+          <td>Execution Model</td>
+          <td>Non-blocking callbacks, runs on a thread pool (ForkJoinPool by default)</td>
+          <td>Blocking I/O — JVM parks the virtual thread while OS thread is freed</td>
+        </tr>
+        <tr>
+          <td>Code Style</td>
+          <td><span class="pill ok">Functional chains</span> — can be hard to follow</td>
+          <td><span class="pill good">Imperative / sequential</span> — easy to read</td>
+        </tr>
+        <tr>
+          <td>Scalability</td>
+          <td><span class="pill good">High</span> — avoids thread blocking</td>
+          <td><span class="pill good">Very High</span> — millions of virtual threads possible</td>
+        </tr>
+        <tr>
+          <td>Debugging</td>
+          <td><span class="pill bad">Hard</span> — stack traces are fragmented across callbacks</td>
+          <td><span class="pill good">Easy</span> — full sequential stack trace</td>
+        </tr>
+        <tr>
+          <td>Error Handling</td>
+          <td><span class="pill ok">Manual</span> — must use <code>.exceptionally()</code> / <code>.handle()</code></td>
+          <td><span class="pill good">Natural</span> — standard try/catch blocks</td>
+        </tr>
+        <tr>
+          <td>Parallel execution &amp; combining results</td>
+          <td><span class="pill good">Built-in</span> — <code>allOf()</code>, <code>anyOf()</code></td>
+          <td><span class="pill ok">Manual</span> — use <code>StructuredTaskScope</code> (preview) or <code>Future</code></td>
+        </tr>
+        <tr>
+          <td>Timeout Support</td>
+          <td><span class="pill good">Built-in</span> — <code>.orTimeout()</code>, <code>.completeOnTimeout()</code></td>
+          <td><span class="pill ok">Manual</span> — requires try/catch with interruption</td>
+        </tr>
+        <tr>
+          <td>Chaining / Pipeline</td>
+          <td><span class="pill good">Excellent</span> — <code>thenApply</code>, <code>thenCompose</code>, <code>thenCombine</code></td>
+          <td><span class="pill bad">Not built-in</span> — write sequential code instead</td>
+        </tr>
+        <tr>
+          <td>Thread Usage</td>
+          <td>Reuses a fixed thread pool; never blocks a thread on I/O</td>
+          <td>Each task gets its own virtual thread (cheap); maps to carrier OS threads</td>
+        </tr>
+        <tr>
+          <td>Spring Boot support</td>
+          <td><span class="pill good">Full</span> — works in all versions</td>
+          <td><span class="pill good">Full</span> — one config line in Spring Boot 3.2+</td>
+        </tr>
+        <tr>
+          <td>Learning Curve</td>
+          <td><span class="pill bad">Steep</span> — requires async mindset</td>
+          <td><span class="pill good">Low</span> — write code like synchronous Java</td>
+        </tr>
+        <tr>
+          <td>Best For</td>
+          <td>Complex async pipelines, event-driven systems, reactive patterns</td>
+          <td>I/O-heavy services, REST clients, DB queries, simple parallelism</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WHEN TO USE -->
+  <div class="section-title">🎯 When to Use Each</div>
+  <div class="when-grid">
+    <div class="when-card cf">
+      <h3>🔵 Use CompletableFuture when...</h3>
+      <ul>
+        <li><span class="icon">🔗</span> You need to chain multiple dependent async steps</li>
+        <li><span class="icon">⚡</span> You need to run tasks in parallel and combine results (<code>allOf</code> / <code>anyOf</code>)</li>
+        <li><span class="icon">⏱️</span> You need built-in timeout handling (<code>orTimeout()</code>)</li>
+        <li><span class="icon">🌊</span> You're building a reactive / event-driven system</li>
+        <li><span class="icon">📦</span> You're on Java 8–20 (no virtual threads available)</li>
+        <li><span class="icon">🧩</span> You need fine-grained control over the thread pool</li>
+      </ul>
+    </div>
+    <div class="when-card vt">
+      <h3>🟢 Use Virtual Threads when...</h3>
+      <ul>
+        <li><span class="icon">📖</span> You want simple, readable, sequential code</li>
+        <li><span class="icon">🗄️</span> Your work is mostly I/O (DB, REST calls, file reads)</li>
+        <li><span class="icon">🚀</span> You need high throughput without complex async code</li>
+        <li><span class="icon">🐛</span> You want easier debugging with full stack traces</li>
+        <li><span class="icon">🔄</span> You're migrating legacy blocking code to be scalable</li>
+        <li><span class="icon">☕</span> You're on Java 21+ and want the simplest solution</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CODE EXAMPLES -->
+  <div class="section-title">💻 Code Examples</div>
+
+  <div style="margin-bottom:16px; color:var(--muted); font-size:0.9rem;">
+    Example: Fetch user data + orders concurrently, then combine results.
+  </div>
+  <div class="code-grid">
+
+    <!-- CompletableFuture -->
+    <div class="code-block cf">
+      <div class="code-header">
+        <span>🔵 CompletableFuture</span>
+        <span style="color:var(--muted); font-weight:400;">Java 8+</span>
+      </div>
+      <pre><span class="cm">// Non-blocking pipeline approach</span>
+<span class="cl">CompletableFuture</span>&lt;<span class="cl">User</span>&gt; userFuture =
+  <span class="cl">CompletableFuture</span>.<span class="fn">supplyAsync</span>(
+    () -&gt; userService.<span class="fn">findById</span>(userId)
+  );
+
+<span class="cl">CompletableFuture</span>&lt;<span class="cl">List</span>&lt;<span class="cl">Order</span>&gt;&gt; ordersFuture =
+  <span class="cl">CompletableFuture</span>.<span class="fn">supplyAsync</span>(
+    () -&gt; orderService.<span class="fn">findByUser</span>(userId)
+  );
+
+<span class="cm">// Combine both results</span>
+<span class="cl">CompletableFuture</span>&lt;<span class="cl">Dashboard</span>&gt; result =
+  userFuture.<span class="fn">thenCombine</span>(ordersFuture,
+    (user, orders) -&gt;
+      <span class="kw">new</span> <span class="cl">Dashboard</span>(user, orders)
+  ).<span class="fn">orTimeout</span>(<span class="nb">5</span>, <span class="cl">TimeUnit</span>.SECONDS)
+   .<span class="fn">exceptionally</span>(ex -&gt; {
+     log.<span class="fn">error</span>(<span class="st">"Failed"</span>, ex);
+     <span class="kw">return</span> <span class="cl">Dashboard</span>.empty();
+   });
+
+<span class="kw">return</span> result.<span class="fn">get</span>();</pre>
+    </div>
+
+    <!-- Virtual Threads -->
+    <div class="code-block vt">
+      <div class="code-header">
+        <span>🟢 Virtual Threads</span>
+        <span style="color:var(--muted); font-weight:400;">Java 21</span>
+      </div>
+      <pre><span class="cm">// Simple, sequential-looking code</span>
+<span class="kw">try</span> (<span class="kw">var</span> scope =
+    <span class="kw">new</span> <span class="cl">StructuredTaskScope</span>
+          .<span class="cl">ShutdownOnFailure</span>()) {
+
+  <span class="kw">var</span> userTask = scope.<span class="fn">fork</span>(
+    () -&gt; userService.<span class="fn">findById</span>(userId)
+  );
+  <span class="kw">var</span> ordersTask = scope.<span class="fn">fork</span>(
+    () -&gt; orderService.<span class="fn">findByUser</span>(userId)
+  );
+
+  scope.<span class="fn">join</span>().<span class="fn">throwIfFailed</span>();
+
+  <span class="kw">return new</span> <span class="cl">Dashboard</span>(
+    userTask.<span class="fn">get</span>(),
+    ordersTask.<span class="fn">get</span>()
+  );
+} <span class="cm">// scope closed automatically</span>
+</pre>
+    </div>
+
+  </div>
+
+  <!-- Simple task example -->
+  <div style="margin-bottom:16px; color:var(--muted); font-size:0.9rem;">
+    Example: Simple fire-and-forget task.
+  </div>
+  <div class="code-grid" style="margin-bottom:52px;">
+    <div class="code-block cf">
+      <div class="code-header">
+        <span>🔵 CompletableFuture</span>
+      </div>
+      <pre><span class="cl">CompletableFuture</span>.<span class="fn">runAsync</span>(() -&gt; {
+  emailService.<span class="fn">send</span>(email);
+}).<span class="fn">exceptionally</span>(ex -&gt; {
+  log.<span class="fn">error</span>(<span class="st">"Email failed"</span>, ex);
+  <span class="kw">return null</span>;
+});</pre>
+    </div>
+    <div class="code-block vt">
+      <div class="code-header">
+        <span>🟢 Virtual Thread</span>
+      </div>
+      <pre><span class="cl">Thread</span>.<span class="fn">ofVirtual</span>().<span class="fn">start</span>(() -&gt; {
+  <span class="kw">try</span> {
+    emailService.<span class="fn">send</span>(email);
+  } <span class="kw">catch</span> (<span class="cl">Exception</span> ex) {
+    log.<span class="fn">error</span>(<span class="st">"Email failed"</span>, ex);
+  }
+});</pre>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-box">
+    <h3>🧠 Bottom Line</h3>
+    <p>
+      <span class="highlight">Virtual Threads do NOT replace CompletableFuture entirely.</span>
+      They solve different problems. Virtual Threads eliminate the need to write async code
+      just to <em>avoid blocking</em> — you can write blocking code and it scales.
+      CompletableFuture is still the right tool for
+      <em>composing pipelines</em>, <em>combining futures</em>, and <em>timeout logic</em>.
+      In Java 21+, prefer Virtual Threads for simplicity and reach for
+      CompletableFuture when you need its compositional power.
+    </p>
+  </div>
+
+  <!-- SPRING BOOT TIP -->
+  <div class="section-title">🌱 Spring Boot 3.2+ Tip</div>
+  <div class="tip-box">
+    <div class="tip-icon">💡</div>
+    <div>
+      <h4>Enable Virtual Threads with one line in application.yaml</h4>
+      <p>
+        Add <code>spring.threads.virtual.enabled=true</code> to your
+        <code>application.yaml</code> or <code>application.properties</code>.
+        Spring Boot will automatically use a virtual-thread-per-task executor
+        for <code>@Async</code>, Tomcat request threads, and scheduled tasks —
+        no code changes needed.
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
+

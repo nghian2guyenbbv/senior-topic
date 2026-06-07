@@ -1,0 +1,6 @@
+1. docker compose up
+2. create new topic
+ docker exec -it kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --create --topic NewTopic --partitions 3 --replication-factor 1
+3. check new topic
+ docker exec -it kafka sh
+ sh /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
