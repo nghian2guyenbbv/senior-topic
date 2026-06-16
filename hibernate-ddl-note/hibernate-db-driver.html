@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hibernate & DB Driver Notes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      padding: 40px 20px;
+      line-height: 1.7;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.2rem;
+      color: #64b5f6;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #90a4ae;
+      margin-bottom: 40px;
+      font-size: 0.95rem;
+    }
+
+    .toc {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 20px 30px;
+      max-width: 860px;
+      margin: 0 auto 40px auto;
+    }
+
+    .toc h2 { color: #81c784; margin-bottom: 12px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: #64b5f6; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .section {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 860px;
+      margin: 0 auto 30px auto;
+    }
+
+    .section h2 {
+      font-size: 1.4rem;
+      color: #81c784;
+      border-bottom: 1px solid #2a2d3a;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .section h3 {
+      font-size: 1.05rem;
+      color: #ffb74d;
+      margin: 20px 0 8px 0;
+    }
+
+    p { margin-bottom: 12px; color: #cfd8dc; }
+
+    pre {
+      background: #12151e;
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      color: #a5d6a7;
+    }
+
+    pre code { color: #a5d6a7; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #1e2235;
+      color: #64b5f6;
+      padding: 10px 14px;
+      text-align: left;
+      border: 1px solid #2a2d3a;
+    }
+
+    td {
+      padding: 9px 14px;
+      border: 1px solid #2a2d3a;
+      color: #cfd8dc;
+    }
+
+    tr:nth-child(even) td { background: #161921; }
+    tr:hover td { background: #1e2235; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: bold;
+    }
+
+    .badge-green { background: #1b5e20; color: #a5d6a7; }
+    .badge-red   { background: #b71c1c; color: #ef9a9a; }
+    .badge-yellow{ background: #f57f17; color: #fff9c4; }
+    .badge-blue  { background: #0d47a1; color: #90caf9; }
+
+    .callout {
+      border-left: 4px solid #64b5f6;
+      background: #12151e;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 14px 0;
+      font-size: 0.92rem;
+      color: #b0bec5;
+    }
+
+    .callout.warn { border-color: #ffb74d; }
+    .callout.success { border-color: #81c784; }
+
+    .bar-wrap { margin: 6px 0; }
+    .bar-label { font-size: 0.85rem; color: #b0bec5; margin-bottom: 3px; }
+    .bar-bg { background: #12151e; border-radius: 6px; height: 18px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 0.75rem; color: #fff; font-weight: bold; }
+
+    footer {
+      text-align: center;
+      color: #546e7a;
+      font-size: 0.82rem;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🗄️ Hibernate &amp; DB Driver Notes</h1>
+<p class="subtitle">Spring Boot · Hibernate · Connection Pool · R2DBC — Quick Reference</p>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>📋 Table of Contents</h2>
+  <ol>
+    <li><a href="#mysql-config">MySQL Connection Config</a></li>
+    <li><a href="#ddl-auto">Hibernate ddl-auto Modes</a></li>
+    <li><a href="#important-configs">Important Hibernate Configurations</a></li>
+    <li><a href="#connection-pools">Connection Pools — HikariCP vs Others</a></li>
+    <li><a href="#hikari-rdbms">HikariCP with RDBMS</a></li>
+    <li><a href="#r2dbc">R2DBC — Reactive Programming</a></li>
+    <li><a href="#r2dbc-pool">R2DBC Connection Pool Config</a></li>
+    <li><a href="#summary">Summary Cheat Sheet</a></li>
+  </ol>
+</div>
+
+<!-- SECTION 1: MySQL Config -->
+<div class="section" id="mysql-config">
+  <h2>1. MySQL Connection Config</h2>
+  <p>Basic Spring Boot YAML configuration to connect to a MySQL database:</p>
+  <pre><code>spring:
+  application:
+    name: outbox-transaction
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/outbox_db
+    username: outbox_user
+    password: outbox_pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect</code></pre>
+
+  <div class="callout">
+    💡 Spring Boot auto-detects the dialect in Hibernate 6+ / Spring Boot 3+. You may not need to set <code>dialect</code> manually.
+  </div>
+</div>
+
+<!-- SECTION 2: DDL Auto -->
+<div class="section" id="ddl-auto">
+  <h2>2. Hibernate <code>ddl-auto</code> Modes</h2>
+  <p>Controls how Hibernate manages the database schema on application startup.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>Creates Tables</th>
+        <th>Updates Schema</th>
+        <th>Drops on Startup</th>
+        <th>Drops on Shutdown</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>none</code></td>
+        <td>❌</td><td>❌</td><td>❌</td><td>❌</td>
+      </tr>
+      <tr>
+        <td><code>validate</code></td>
+        <td>❌</td><td>❌</td><td>❌</td><td>❌</td>
+      </tr>
+      <tr>
+        <td><code>update</code></td>
+        <td>✅</td><td>✅</td><td>❌</td><td>❌</td>
+      </tr>
+      <tr>
+        <td><code>create</code></td>
+        <td>✅</td><td>❌</td><td>✅</td><td>❌</td>
+      </tr>
+      <tr>
+        <td><code>create-drop</code></td>
+        <td>✅</td><td>❌</td><td>✅</td><td>✅</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Mode Details</h3>
+  <p><strong style="color:#ffb74d">none</strong> — Hibernate does nothing. You manage DDL completely yourself.</p>
+  <p><strong style="color:#ffb74d">validate</strong> — Checks entity vs DB schema. Throws error on mismatch. No changes made.</p>
+  <p><strong style="color:#ffb74d">update</strong> — Creates missing tables/columns. Never drops anything. ⚠️ Not for production.</p>
+  <p><strong style="color:#ffb74d">create</strong> — Drops and recreates all tables every startup. All data is lost.</p>
+  <p><strong style="color:#ffb74d">create-drop</strong> — Same as create, also drops all tables on shutdown. Best for tests.</p>
+
+  <h3>Recommended by Environment</h3>
+  <table>
+    <thead><tr><th>Environment</th><th>Recommended Mode</th></tr></thead>
+    <tbody>
+      <tr><td>Development</td><td><span class="badge badge-blue">update</span> or <span class="badge badge-blue">create</span></td></tr>
+      <tr><td>Testing</td><td><span class="badge badge-yellow">create-drop</span></td></tr>
+      <tr><td>Production</td><td><span class="badge badge-green">none</span> or <span class="badge badge-green">validate</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    ⚠️ <strong>Note:</strong> The database/schema itself must already exist. Hibernate creates <em>tables</em> but does <strong>not</strong> create the database.
+    <pre><code>CREATE DATABASE outbox_db;</code></pre>
+  </div>
+</div>
+
+<!-- SECTION 3: Important Configs -->
+<div class="section" id="important-configs">
+  <h2>3. Important Hibernate Configurations</h2>
+
+  <h3>show-sql &amp; format-sql</h3>
+  <pre><code>spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true        # pretty-print SQL
+        use_sql_comments: true  # shows JPQL source as comment</code></pre>
+
+  <h3>open-in-view (always disable!)</h3>
+  <pre><code>spring:
+  jpa:
+    open-in-view: false   # default is true — keep session open per HTTP request (bad!)</code></pre>
+  <div class="callout warn">⚠️ Always set <code>open-in-view: false</code>. Keeping it true can cause lazy loading issues and performance problems.</div>
+
+  <h3>Naming Strategy</h3>
+  <pre><code>spring:
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl</code></pre>
+  <table>
+    <thead><tr><th>Strategy</th><th>aggregateId →</th></tr></thead>
+    <tbody>
+      <tr><td>Default (SpringImplicitNaming)</td><td><code>aggregate_id</code> (snake_case)</td></tr>
+      <tr><td>Standard</td><td><code>aggregateId</code> (as-is)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Batch Inserts (Performance)</h3>
+  <pre><code>spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true</code></pre>
+
+  <h3>Batch Fetch Size (N+1 Fix)</h3>
+  <pre><code>spring:
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 20</code></pre>
+
+  <h3>Config Cheat Sheet</h3>
+  <table>
+    <thead><tr><th>Config</th><th>Dev</th><th>Production</th></tr></thead>
+    <tbody>
+      <tr><td>ddl-auto</td><td>update</td><td>none / validate</td></tr>
+      <tr><td>show-sql</td><td>true</td><td>false</td></tr>
+      <tr><td>format-sql</td><td>true</td><td>false</td></tr>
+      <tr><td>open-in-view</td><td>false</td><td>false</td></tr>
+      <tr><td>batch_size</td><td>optional</td><td>✅ recommended</td></tr>
+      <tr><td>hikari pool-size</td><td>default</td><td>✅ tune carefully</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 4: Connection Pools -->
+<div class="section" id="connection-pools">
+  <h2>4. Connection Pools — HikariCP vs Others</h2>
+
+  <table>
+    <thead><tr><th>Pool</th><th>Maintained</th><th>Spring Boot Default</th><th>Performance</th></tr></thead>
+    <tbody>
+      <tr><td><strong>HikariCP</strong></td><td>✅ Active</td><td>✅ Yes (Boot 2+)</td><td>🏆 Fastest</td></tr>
+      <tr><td>Apache DBCP2</td><td>✅ Active</td><td>❌ No</td><td>Medium</td></tr>
+      <tr><td>Tomcat JDBC Pool</td><td>✅ Active</td><td>❌ No (was Boot 1.x)</td><td>Medium</td></tr>
+      <tr><td>C3P0</td><td>⚠️ Slow updates</td><td>❌ No</td><td>Slow</td></tr>
+      <tr><td>Vibur</td><td>✅ Active</td><td>❌ No</td><td>Fast</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Performance Benchmark</h3>
+  <div class="bar-wrap"><div class="bar-label">HikariCP</div><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#1565c0;">~1,000,000+ conn/s</div></div></div>
+  <div class="bar-wrap"><div class="bar-label">Vibur</div><div class="bar-bg"><div class="bar-fill" style="width:70%;background:#283593;">~700,000 conn/s</div></div></div>
+  <div class="bar-wrap"><div class="bar-label">Tomcat JDBC</div><div class="bar-bg"><div class="bar-fill" style="width:55%;background:#1a237e;">~550,000 conn/s</div></div></div>
+  <div class="bar-wrap"><div class="bar-label">DBCP2</div><div class="bar-bg"><div class="bar-fill" style="width:40%;background:#0d47a1;">~400,000 conn/s</div></div></div>
+  <div class="bar-wrap"><div class="bar-label">C3P0</div><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#b71c1c;">~200,000 conn/s</div></div></div>
+
+  <h3>How to Switch to DBCP2</h3>
+  <pre><code>&lt;!-- pom.xml --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+  &lt;exclusions&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;com.zaxxer&lt;/groupId&gt;
+      &lt;artifactId&gt;HikariCP&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+  &lt;/exclusions&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+  &lt;artifactId&gt;commons-dbcp2&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+  <pre><code>spring:
+  datasource:
+    type: org.apache.commons.dbcp2.BasicDataSource</code></pre>
+
+  <h3>When to Use Which</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>General / most projects</td><td><span class="badge badge-green">HikariCP ✅</span></td></tr>
+      <tr><td>Need advanced config options</td><td>DBCP2</td></tr>
+      <tr><td>Running on Tomcat, legacy app</td><td>Tomcat JDBC</td></tr>
+      <tr><td>Legacy codebase already uses it</td><td>C3P0 (consider migrating)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 5: HikariCP with RDBMS -->
+<div class="section" id="hikari-rdbms">
+  <h2>5. HikariCP with RDBMS</h2>
+  <p>HikariCP is <strong>database-agnostic</strong> — it works with any RDBMS via JDBC. Just swap the URL and driver.</p>
+
+  <pre><code># MySQL
+url: jdbc:mysql://localhost:3306/outbox_db
+driver-class-name: com.mysql.cj.jdbc.Driver
+
+# PostgreSQL
+url: jdbc:postgresql://localhost:5432/outbox_db
+driver-class-name: org.postgresql.Driver
+
+# SQL Server
+url: jdbc:sqlserver://localhost:1433;databaseName=outbox_db
+driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# Oracle
+url: jdbc:oracle:thin:@localhost:1521:orcl
+driver-class-name: oracle.jdbc.OracleDriver
+
+# H2 (in-memory)
+url: jdbc:h2:mem:testdb
+driver-class-name: org.h2.Driver</code></pre>
+
+  <table>
+    <thead><tr><th>RDBMS</th><th>Works with HikariCP?</th></tr></thead>
+    <tbody>
+      <tr><td>MySQL</td><td>✅</td></tr>
+      <tr><td>PostgreSQL</td><td>✅</td></tr>
+      <tr><td>SQL Server</td><td>✅</td></tr>
+      <tr><td>Oracle</td><td>✅</td></tr>
+      <tr><td>H2</td><td>✅</td></tr>
+      <tr><td>SQLite</td><td>✅</td></tr>
+      <tr><td>MariaDB</td><td>✅</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    Architecture: <strong>Your App → HikariCP (pool) → JDBC Driver → Any RDBMS</strong>
+  </div>
+</div>
+
+<!-- SECTION 6: R2DBC -->
+<div class="section" id="r2dbc">
+  <h2>6. R2DBC — Reactive Programming</h2>
+
+  <p>HikariCP uses <strong>JDBC (blocking)</strong>. For reactive applications (Spring WebFlux), use <strong>R2DBC</strong> instead.</p>
+
+  <pre><code>Same MySQL Database
+        │
+        ├── JDBC Driver (mysql-connector-j)   → Blocking    → HikariCP
+        │
+        └── R2DBC Driver (r2dbc-mysql)        → Non-blocking → r2dbc-pool</code></pre>
+
+  <h3>Dependencies</h3>
+  <pre><code>&lt;!-- pom.xml --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-data-r2dbc&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;io.asyncer&lt;/groupId&gt;
+  &lt;artifactId&gt;r2dbc-mysql&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;io.r2dbc&lt;/groupId&gt;
+  &lt;artifactId&gt;r2dbc-pool&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+
+  <h3>JDBC vs R2DBC Comparison</h3>
+  <table>
+    <thead><tr><th></th><th>JDBC + HikariCP</th><th>R2DBC + r2dbc-pool</th></tr></thead>
+    <tbody>
+      <tr><td>Programming model</td><td>Blocking</td><td>Non-blocking ✅</td></tr>
+      <tr><td>Spring module</td><td>Spring Data JPA</td><td>Spring Data R2DBC</td></tr>
+      <tr><td>Repository</td><td>JpaRepository</td><td>ReactiveCrudRepository</td></tr>
+      <tr><td>Return types</td><td>List&lt;T&gt;, Optional&lt;T&gt;</td><td>Flux&lt;T&gt;, Mono&lt;T&gt;</td></tr>
+      <tr><td>Connection pool</td><td>HikariCP</td><td>r2dbc-pool</td></tr>
+      <tr><td>Hibernate support</td><td>✅ Full</td><td>❌ Not supported</td></tr>
+      <tr><td>Maturity</td><td>🏆 Very mature</td><td>Newer, fewer features</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Code Difference</h3>
+  <pre><code>// JDBC (Blocking) — holds a thread
+List&lt;OutBox&gt; result = repository.findAll();
+
+// R2DBC (Reactive) — non-blocking
+Flux&lt;OutBox&gt; result  = repository.findAll();
+Mono&lt;OutBox&gt; single  = repository.findById(1L);</code></pre>
+
+  <h3>R2DBC Driver Support</h3>
+  <table>
+    <thead><tr><th>Database</th><th>R2DBC Driver</th></tr></thead>
+    <tbody>
+      <tr><td>MySQL</td><td>r2dbc-mysql (io.asyncer)</td></tr>
+      <tr><td>PostgreSQL</td><td>r2dbc-postgresql ✅ Most mature</td></tr>
+      <tr><td>SQL Server</td><td>r2dbc-mssql</td></tr>
+      <tr><td>Oracle</td><td>oracle-r2dbc</td></tr>
+      <tr><td>H2</td><td>r2dbc-h2</td></tr>
+    </tbody>
+  </table>
+
+  <h3>When to Use</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>REST API, traditional Spring MVC</td><td><span class="badge badge-blue">JDBC + HikariCP</span></td></tr>
+      <tr><td>Spring WebFlux, reactive streams</td><td><span class="badge badge-green">R2DBC + r2dbc-pool</span></td></tr>
+      <tr><td>Mixed (not recommended)</td><td>Wrap with <code>subscribeOn(Schedulers.boundedElastic())</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 7: R2DBC Pool Config -->
+<div class="section" id="r2dbc-pool">
+  <h2>7. R2DBC Connection Pool Config</h2>
+  <p>Spring Boot <strong>auto-configures r2dbc-pool</strong> with defaults. Only configure when you need to tune.</p>
+
+  <h3>Minimal Config (defaults are fine)</h3>
+  <pre><code>spring:
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/outbox_db
+    username: outbox_user
+    password: outbox_pass</code></pre>
+
+  <h3>Full Tuned Config</h3>
+  <pre><code>spring:
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/outbox_db
+    username: outbox_user
+    password: outbox_pass
+    pool:
+      initial-size: 5           # connections created on startup
+      max-size: 20              # max connections in pool
+      max-idle-time: 30m        # close idle connections after 30 min
+      max-acquire-time: 5s      # timeout waiting for a connection
+      max-life-time: 1h         # max lifetime of a connection
+      validation-query: SELECT 1  # health check query</code></pre>
+
+  <h3>HikariCP vs r2dbc-pool Config Mapping</h3>
+  <table>
+    <thead><tr><th>Config</th><th>HikariCP</th><th>r2dbc-pool</th></tr></thead>
+    <tbody>
+      <tr><td>Min connections</td><td>minimum-idle</td><td>initial-size</td></tr>
+      <tr><td>Max connections</td><td>maximum-pool-size</td><td>max-size</td></tr>
+      <tr><td>Idle timeout</td><td>idle-timeout</td><td>max-idle-time</td></tr>
+      <tr><td>Acquire timeout</td><td>connection-timeout</td><td>max-acquire-time</td></tr>
+      <tr><td>Max lifetime</td><td>max-lifetime</td><td>max-life-time</td></tr>
+      <tr><td>Health check</td><td>connection-test-query</td><td>validation-query</td></tr>
+    </tbody>
+  </table>
+
+  <h3>When to Tune</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Dev / small app</td><td>Leave defaults ✅</td></tr>
+      <tr><td>High traffic production</td><td>Tune max-size based on load</td></tr>
+      <tr><td>DB has max connection limit</td><td>Set max-size below DB limit</td></tr>
+      <tr><td>Long idle connections causing issues</td><td>Lower max-idle-time</td></tr>
+      <tr><td>Slow DB responses</td><td>Increase max-acquire-time</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    ✅ <strong>Rule of thumb:</strong> Start with defaults, monitor in production, then tune based on actual metrics.
+  </div>
+</div>
+
+<!-- SECTION 8: Summary -->
+<div class="section" id="summary">
+  <h2>8. Summary Cheat Sheet</h2>
+
+  <h3>ddl-auto Quick Pick</h3>
+  <table>
+    <thead><tr><th>Environment</th><th>ddl-auto</th></tr></thead>
+    <tbody>
+      <tr><td>Development</td><td><code>update</code></td></tr>
+      <tr><td>Testing / CI</td><td><code>create-drop</code></td></tr>
+      <tr><td>Production</td><td><code>none</code> or <code>validate</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Blocking vs Reactive Quick Pick</h3>
+  <table>
+    <thead><tr><th>App Type</th><th>Driver</th><th>Pool</th><th>Repository</th></tr></thead>
+    <tbody>
+      <tr><td>Spring MVC (traditional)</td><td>JDBC</td><td>HikariCP</td><td>JpaRepository</td></tr>
+      <tr><td>Spring WebFlux (reactive)</td><td>R2DBC</td><td>r2dbc-pool</td><td>ReactiveCrudRepository</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Dialect Reference</h3>
+  <table>
+    <thead><tr><th>Database</th><th>Hibernate Dialect</th></tr></thead>
+    <tbody>
+      <tr><td>MySQL</td><td><code>org.hibernate.dialect.MySQLDialect</code></td></tr>
+      <tr><td>PostgreSQL</td><td><code>org.hibernate.dialect.PostgreSQLDialect</code></td></tr>
+      <tr><td>SQL Server</td><td><code>org.hibernate.dialect.SQLServerDialect</code></td></tr>
+      <tr><td>Oracle</td><td><code>org.hibernate.dialect.OracleDialect</code></td></tr>
+      <tr><td>H2</td><td><code>org.hibernate.dialect.H2Dialect</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    💡 In <strong>Hibernate 6+ / Spring Boot 3+</strong>, the dialect is <em>auto-detected</em> from the datasource URL — no need to set it manually.
+  </div>
+</div>
+
+<footer>
+  Generated on June 13, 2026 · Hibernate &amp; DB Driver Notes · Spring Boot Reference
+</footer>
+
+</body>
+</html>
+

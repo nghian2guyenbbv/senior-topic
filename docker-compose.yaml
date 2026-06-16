@@ -38,19 +38,19 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  outbox-transaction:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: outbox-transaction
-    restart: unless-stopped
-    depends_on:
-      - kafka
-      - mysql
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
+#  outbox-transaction:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: outbox-transaction
+#    restart: unless-stopped
+#    depends_on:
+#      - kafka
+#      - mysql
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      SPRING_PROFILES_ACTIVE: docker
 
 volumes:
   mysql_data:
