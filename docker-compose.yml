@@ -1,0 +1,26 @@
+services:
+  techie-mysql:
+    image: mysql:8.0
+    container_name: techie-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: javaTechie
+      MYSQL_USER: techie
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./src/main/resources/data.sql:/docker-entrypoint-initdb.d/data.sql:ro
+  stock-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: stock-img
+    restart: always
+    container_name: stock-container
+    ports:
+      - "9001:9001"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - techie-mysql
