@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Boot + Apache Camel: JSON to XML Conversion (Nested Objects)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #555;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        code {
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        .inline-code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .file-path {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .section {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tree {
+            font-family: monospace;
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .diagram {
+            background: #fff;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 2;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🐫 Spring Boot + Apache Camel: JSON to XML Conversion</h1>
+<p><em>With nested objects: Customer, Address, OrderItems, Payment</em></p>
+
+<div class="section">
+    <h2>📋 Overview</h2>
+    <p>
+        This project demonstrates how to use <strong>Spring Boot</strong> with <strong>Apache Camel</strong>
+        to convert a complex nested JSON message to XML via a REST API endpoint.
+    </p>
+    <p>The model includes:</p>
+    <ul>
+        <li><strong>Order</strong> — root object containing all order details</li>
+        <li><strong>Customer</strong> — nested customer info with billing &amp; shipping addresses</li>
+        <li><strong>Address</strong> — reused for both billing and shipping</li>
+        <li><strong>OrderItem</strong> — list of products in the order</li>
+        <li><strong>Payment</strong> — payment details (card info, amount, currency)</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h2>🗂️ Object Model Diagram</h2>
+    <div class="diagram">
+        Order<br>
+        ├── orderId, orderDate, status, totalAmount, notes<br>
+        ├── <strong>customer: Customer</strong><br>
+        │&nbsp;&nbsp;&nbsp;├── customerId, firstName, lastName, email, phone<br>
+        │&nbsp;&nbsp;&nbsp;├── <strong>billingAddress: Address</strong> { street, city, state, zipCode, country }<br>
+        │&nbsp;&nbsp;&nbsp;└── <strong>shippingAddress: Address</strong> { street, city, state, zipCode, country }<br>
+        ├── <strong>items: List&lt;OrderItem&gt;</strong><br>
+        │&nbsp;&nbsp;&nbsp;└── productId, productName, quantity, unitPrice, discount<br>
+        └── <strong>payment: Payment</strong><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;└── method, cardNumber, cardHolder, expiryDate, amount, currency
+    </div>
+</div>
+
+<div class="section">
+    <h2>📁 Project Structure</h2>
+    <div class="tree">
+<pre style="background:transparent;color:#333;padding:0;margin:0;">spring-camel-dsl/
+├── pom.xml
+├── src/main/java/org/spring/streaming/springcameldsl/
+│   ├── SpringCamelDslApplication.java
+│   ├── model/
+│   │   ├── Order.java              (root object)
+│   │   ├── Customer.java           (nested - has 2 Address fields)
+│   │   ├── Address.java            (nested in Customer)
+│   │   ├── OrderItem.java          (list element in Order)
+│   │   └── Payment.java            (nested in Order)
+│   ├── service/
+│   │   └── XmlStorageService.java  (stores XML as String in a bean)
+│   └── route/
+│       └── JsonToXmlRoute.java     (Camel route definition)
+└── src/main/resources/
+    └── application.yaml</pre>
+    </div>
+</div>
+
+<div class="section">
+    <h2>📦 Dependencies (pom.xml)</h2>
+    <table>
+        <tr><th>Dependency</th><th>Purpose</th></tr>
+        <tr><td>spring-boot-starter-webmvc</td><td>Embedded web server (Tomcat)</td></tr>
+        <tr><td>camel-spring-boot-starter</td><td>Core Camel + Spring Boot integration</td></tr>
+        <tr><td>camel-jackson-starter</td><td>JSON marshalling/unmarshalling</td></tr>
+        <tr><td>camel-jacksonxml-starter</td><td>XML marshalling via Jackson XML</td></tr>
+        <tr><td>camel-platform-http-starter</td><td>REST DSL over platform HTTP</td></tr>
+    </table>
+
+    <h3>Full pom.xml</h3>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;parent&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+        &lt;version&gt;4.0.7&lt;/version&gt;
+        &lt;relativePath/&gt;
+    &lt;/parent&gt;
+    &lt;groupId&gt;org.spring.streaming&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-camel-dsl&lt;/artifactId&gt;
+    &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
+
+    &lt;properties&gt;
+        &lt;java.version&gt;17&lt;/java.version&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-webmvc&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.camel.springboot&lt;/groupId&gt;
+            &lt;artifactId&gt;camel-spring-boot-starter&lt;/artifactId&gt;
+            &lt;version&gt;4.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.camel.springboot&lt;/groupId&gt;
+            &lt;artifactId&gt;camel-jackson-starter&lt;/artifactId&gt;
+            &lt;version&gt;4.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.camel.springboot&lt;/groupId&gt;
+            &lt;artifactId&gt;camel-jacksonxml-starter&lt;/artifactId&gt;
+            &lt;version&gt;4.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.camel.springboot&lt;/groupId&gt;
+            &lt;artifactId&gt;camel-platform-http-starter&lt;/artifactId&gt;
+            &lt;version&gt;4.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+</div>
+
+<div class="section">
+    <h2>📝 Source Code</h2>
+
+    <h3 class="file-path">SpringCamelDslApplication.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SpringCamelDslApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringCamelDslApplication.class, args);
+    }
+}</code></pre>
+
+    <h3 class="file-path">model/Address.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.model;
+
+public class Address {
+
+    private String street;
+    private String city;
+    private String state;
+    private String zipCode;
+    private String country;
+
+    public Address() {}
+
+    public Address(String street, String city, String state, String zipCode, String country) {
+        this.street = street;
+        this.city = city;
+        this.state = state;
+        this.zipCode = zipCode;
+        this.country = country;
+    }
+
+    // Getters and Setters
+    public String getStreet() { return street; }
+    public void setStreet(String street) { this.street = street; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+}</code></pre>
+
+    <h3 class="file-path">model/Customer.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.model;
+
+public class Customer {
+
+    private String customerId;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phone;
+    private Address billingAddress;
+    private Address shippingAddress;
+
+    public Customer() {}
+
+    // Getters and Setters
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public Address getBillingAddress() { return billingAddress; }
+    public void setBillingAddress(Address billingAddress) { this.billingAddress = billingAddress; }
+    public Address getShippingAddress() { return shippingAddress; }
+    public void setShippingAddress(Address shippingAddress) { this.shippingAddress = shippingAddress; }
+}</code></pre>
+
+    <h3 class="file-path">model/OrderItem.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.model;
+
+public class OrderItem {
+
+    private String productId;
+    private String productName;
+    private int quantity;
+    private double unitPrice;
+    private double discount;
+
+    public OrderItem() {}
+
+    public OrderItem(String productId, String productName, int quantity,
+                     double unitPrice, double discount) {
+        this.productId = productId;
+        this.productName = productName;
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+        this.discount = discount;
+    }
+
+    // Getters and Setters
+    public String getProductId() { return productId; }
+    public void setProductId(String productId) { this.productId = productId; }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public double getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
+    public double getDiscount() { return discount; }
+    public void setDiscount(double discount) { this.discount = discount; }
+}</code></pre>
+
+    <h3 class="file-path">model/Payment.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.model;
+
+public class Payment {
+
+    private String method;
+    private String cardNumber;
+    private String cardHolder;
+    private String expiryDate;
+    private double amount;
+    private String currency;
+
+    public Payment() {}
+
+    // Getters and Setters
+    public String getMethod() { return method; }
+    public void setMethod(String method) { this.method = method; }
+    public String getCardNumber() { return cardNumber; }
+    public void setCardNumber(String cardNumber) { this.cardNumber = cardNumber; }
+    public String getCardHolder() { return cardHolder; }
+    public void setCardHolder(String cardHolder) { this.cardHolder = cardHolder; }
+    public String getExpiryDate() { return expiryDate; }
+    public void setExpiryDate(String expiryDate) { this.expiryDate = expiryDate; }
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+}</code></pre>
+
+    <h3 class="file-path">model/Order.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.model;
+
+import java.util.List;
+
+public class Order {
+
+    private String orderId;
+    private String orderDate;
+    private String status;
+    private Customer customer;
+    private List&lt;OrderItem&gt; items;
+    private Payment payment;
+    private double totalAmount;
+    private String notes;
+
+    public Order() {}
+
+    // Getters and Setters
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
+    public String getOrderDate() { return orderDate; }
+    public void setOrderDate(String orderDate) { this.orderDate = orderDate; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Customer getCustomer() { return customer; }
+    public void setCustomer(Customer customer) { this.customer = customer; }
+    public List&lt;OrderItem&gt; getItems() { return items; }
+    public void setItems(List&lt;OrderItem&gt; items) { this.items = items; }
+    public Payment getPayment() { return payment; }
+    public void setPayment(Payment payment) { this.payment = payment; }
+    public double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+}</code></pre>
+
+    <h3 class="file-path">service/XmlStorageService.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.service;
+
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+public class XmlStorageService {
+
+    private final Map&lt;String, String&gt; xmlStore = new ConcurrentHashMap&lt;&gt;();
+
+    public void store(String orderId, String xml) {
+        xmlStore.put(orderId, xml);
+    }
+
+    public String get(String orderId) {
+        return xmlStore.get(orderId);
+    }
+
+    public Map&lt;String, String&gt; getAll() {
+        return xmlStore;
+    }
+
+    public boolean exists(String orderId) {
+        return xmlStore.containsKey(orderId);
+    }
+}</code></pre>
+
+    <h3 class="file-path">route/JsonToXmlRoute.java</h3>
+<pre><code>package org.spring.streaming.springcameldsl.route;
+
+import org.apache.camel.builder.RouteBuilder;
+import org.spring.streaming.springcameldsl.model.Order;
+import org.spring.streaming.springcameldsl.service.XmlStorageService;
+import org.springframework.stereotype.Component;
+
+@Component
+public class JsonToXmlRoute extends RouteBuilder {
+
+    private final XmlStorageService xmlStorageService;
+
+    public JsonToXmlRoute(XmlStorageService xmlStorageService) {
+        this.xmlStorageService = xmlStorageService;
+    }
+
+    @Override
+    public void configure() throws Exception {
+
+        // REST endpoint: convert JSON to XML
+        rest("/api")
+            .post("/json-to-xml")
+                .consumes("application/json")
+                .produces("application/xml")
+                .type(Order.class)
+                .to("direct:convertJsonToXml")
+
+            // REST endpoint: retrieve stored XML by orderId
+            .get("/xml/{orderId}")
+                .produces("application/xml")
+                .to("direct:getStoredXml");
+
+        // Route: convert Order POJO to XML and store it
+        from("direct:convertJsonToXml")
+            .routeId("json-to-xml-route")
+            .log("Received order: ${body.orderId}")
+            .setHeader("orderId", simple("${body.orderId}"))
+            .marshal().jacksonXml(Order.class)
+            .log("Converted to XML: ${body}")
+            .bean(xmlStorageService, "store(${header.orderId}, ${body})")
+            .log("Stored XML for order: ${header.orderId}");
+
+        // Route: retrieve stored XML
+        from("direct:getStoredXml")
+            .routeId("get-stored-xml-route")
+            .log("Retrieving XML for order: ${header.orderId}")
+            .bean(xmlStorageService, "get(${header.orderId})");
+    }
+}</code></pre>
+</div>
+
+<div class="section">
+    <h2>⚙️ Configuration</h2>
+
+    <h3 class="file-path">application.yaml</h3>
+<pre><code>spring:
+  application:
+    name: spring-camel-dsl
+
+server:
+  port: 8080
+
+camel:
+  springboot:
+    main-run-controller: true
+  rest:
+    component: platform-http
+    binding-mode: json</code></pre>
+</div>
+
+<div class="section">
+    <h2>🚀 How to Run</h2>
+<pre><code># Build the project
+./mvnw compile
+
+# Run the application
+./mvnw spring-boot:run</code></pre>
+</div>
+
+<div class="section">
+    <h2>🧪 Testing with curl</h2>
+
+    <h3>Request (Complex nested JSON)</h3>
+<pre><code>curl -X POST http://localhost:8080/api/json-to-xml \
+  -H "Content-Type: application/json" \
+  -d '{
+  "orderId": "ORD-2026-001",
+  "orderDate": "2026-06-23T15:30:00Z",
+  "status": "CONFIRMED",
+  "customer": {
+    "customerId": "CUST-100",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-123-4567",
+    "billingAddress": {
+      "street": "123 Main Street",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "shippingAddress": {
+      "street": "456 Oak Avenue",
+      "city": "Brooklyn",
+      "state": "NY",
+      "zipCode": "11201",
+      "country": "USA"
+    }
+  },
+  "items": [
+    {
+      "productId": "PROD-001",
+      "productName": "MacBook Pro 16-inch",
+      "quantity": 1,
+      "unitPrice": 2499.99,
+      "discount": 200.00
+    },
+    {
+      "productId": "PROD-002",
+      "productName": "USB-C Hub Adapter",
+      "quantity": 2,
+      "unitPrice": 49.99,
+      "discount": 0.00
+    },
+    {
+      "productId": "PROD-003",
+      "productName": "Laptop Sleeve Case",
+      "quantity": 1,
+      "unitPrice": 39.99,
+      "discount": 5.00
+    }
+  ],
+  "payment": {
+    "method": "CREDIT_CARD",
+    "cardNumber": "****-****-****-4242",
+    "cardHolder": "John Doe",
+    "expiryDate": "12/2028",
+    "amount": 2434.96,
+    "currency": "USD"
+  },
+  "totalAmount": 2434.96,
+  "notes": "Please deliver before noon. Ring doorbell twice."
+}'</code></pre>
+
+    <h3>Expected XML Response</h3>
+<pre><code>&lt;Order&gt;
+  &lt;orderId&gt;ORD-2026-001&lt;/orderId&gt;
+  &lt;orderDate&gt;2026-06-23T15:30:00Z&lt;/orderDate&gt;
+  ...
+&lt;/Order&gt;</code></pre>
+
+    <h3>Retrieve stored XML later (GET)</h3>
+<pre><code># Retrieve the stored XML by orderId
+curl http://localhost:8080/api/xml/ORD-2026-001</code></pre>
+    <p>Returns the same XML that was generated during the POST conversion. The XML is stored as a <code class="inline-code">String</code> in the <code class="inline-code">XmlStorageService</code> bean's <code class="inline-code">ConcurrentHashMap</code>, keyed by <code class="inline-code">orderId</code>.</p>
+</div>
+
+<div class="section">
+    <h2>🔄 How It Works</h2>
+    <ol>
+        <li>Client sends a <strong>POST</strong> request with a deeply nested JSON body to <code class="inline-code">/api/json-to-xml</code></li>
+        <li>Camel REST DSL receives the request and automatically <strong>unmarshals</strong> the JSON into an <code class="inline-code">Order</code> POJO (including all nested objects: Customer, Address, OrderItem, Payment)</li>
+        <li>The message is routed to <code class="inline-code">direct:convertJsonToXml</code></li>
+        <li>The route extracts the <code class="inline-code">orderId</code> into a header for later use</li>
+        <li>The route <strong>marshals</strong> the full object graph into XML using <code class="inline-code">.marshal().jacksonXml()</code></li>
+        <li>The XML String is <strong>stored in the XmlStorageService bean</strong> (a <code class="inline-code">ConcurrentHashMap&lt;String, String&gt;</code> keyed by orderId)</li>
+        <li>The XML string is returned as the HTTP response with <code class="inline-code">Content-Type: application/xml</code></li>
+        <li>Later, a <strong>GET</strong> request to <code class="inline-code">/api/xml/{orderId}</code> retrieves the stored XML string from the bean</li>
+    </ol>
+
+    <h3>Key Points</h3>
+    <ul>
+        <li><strong>Nested objects</strong> (Customer, Address) are automatically serialized as nested XML elements</li>
+        <li><strong>Lists</strong> (items) are serialized as repeated XML elements</li>
+        <li><strong>Jackson XML</strong> handles the entire object graph without additional configuration</li>
+        <li><strong>binding-mode: json</strong> in the config tells Camel to auto-unmarshal incoming JSON into the type specified in <code class="inline-code">.type(Order.class)</code></li>
+        <li><strong>XmlStorageService</strong> is a Spring <code class="inline-code">@Service</code> bean that stores the XML as a plain <code class="inline-code">String</code> in memory, allowing retrieval via the GET endpoint</li>
+        <li><strong>.bean()</strong> in Camel invokes a method on a Spring bean directly from the route</li>
+    </ul>
+</div>
+
+<div class="section" style="text-align:center; color:#777; font-size:13px;">
+    <p>Generated on 2026-06-23 | Spring Boot 4.0.7 | Apache Camel 4.20.0 | Java 17</p>
+</div>
+
+</body>
+</html>

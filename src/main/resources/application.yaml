@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: spring-camel-dsl
+
+server:
+  port: 8080
+
+camel:
+  springboot:
+    main-run-controller: true
+  rest:
+    component: platform-http
+    binding-mode: json
