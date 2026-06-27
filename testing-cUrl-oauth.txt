@@ -1,0 +1,296 @@
+================================================================
+  OAuth2 + JWT  —  Step-by-Step cURL Testing Guide
+================================================================
+  Modules:
+    oauth-server    http://localhost:9000  (Authorization Server)
+    resource-server http://localhost:8090  (Resource Server)
+    client-app      http://localhost:8080  (OAuth2 Client)
+
+  Test credentials:
+    client_id     : client
+    client_secret : secret
+    user          : user / password
+
+  Start order:
+    1. oauth-server    (must be first)
+    2. resource-server
+    3. client-app
+================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1 — Verify all three servers are running
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Auth Server — should return OIDC metadata JSON
+curl -s http://localhost:9000/.well-known/openid-configuration | python -m json.tool
+
+# Resource Server — should return 401 (server is up but token required)
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8090/api/resources
+
+# Client App — should redirect to auth server login (302)
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:8080/
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2 — Fetch the JWK Set (public keys for JWT verification)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s http://localhost:9000/oauth2/jwks | python -m json.tool
+
+# Expected: RSA public key used by the resource server to verify JWT signatures
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3 — Get a JWT via Client Credentials grant
+         (machine-to-machine, no browser required)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=client_credentials&scope=read write" \
+  | python -m json.tool
+
+# Expected response:
+# {
+#   "access_token": "<JWT>",
+#   "token_type": "Bearer",
+#   "expires_in": 1799,
+#   "scope": "read write"
+# }
+
+# ► Save the access_token value — used in all steps below.
+# Replace <ACCESS_TOKEN> with the actual JWT in every command below.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 4 — Decode the JWT payload (no signature check)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Linux / Mac:
+echo "<ACCESS_TOKEN>" | cut -d. -f2 | base64 -d 2>/dev/null | python -m json.tool
+
+# Windows PowerShell:
+$token = "<ACCESS_TOKEN>"
+$payload = $token.Split('.')[1]
+$padded  = $payload.PadRight($payload.Length + (4 - $payload.Length % 4) % 4, '=')
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($padded)) | python -m json.tool
+
+# Expected claims in the payload:
+#   sub         : "client"  (or username for auth_code flow)
+#   iss         : "http://localhost:9000"
+#   iat / exp   : issued-at / expiry timestamps
+#   scope       : "read write"
+#   authorities : [...] (added by the JWT token customizer)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 5 — Call Resource Server: GET /api/resources
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s http://localhost:8090/api/resources \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# Expected response:
+# {
+#   "resources": [
+#     { "id": 1, "name": "Resource A", "type": "document" },
+#     { "id": 2, "name": "Resource B", "type": "image" },
+#     { "id": 3, "name": "Resource C", "type": "video" }
+#   ],
+#   "accessedBy": "client",
+#   "scopes": ["read", "write"]
+# }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 6 — Call Resource Server: GET /api/me (JWT claims info)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s http://localhost:8090/api/me \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# Expected response:
+# {
+#   "subject"    : "client",
+#   "authorities": [],
+#   "scopes"     : ["read", "write"],
+#   "issuedAt"   : "...",
+#   "expiresAt"  : "..."
+# }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 7 — Call Resource Server with INVALID token (expect 401)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
+  http://localhost:8090/api/resources \
+  -H "Authorization: Bearer invalid.token.here"
+
+# Expected: HTTP Status: 401
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 8 — Authorization Code flow (requires browser for login)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  8a. Open this URL in a browser:
+  ─────────────────────────────────────────────────────────────
+  http://localhost:9000/oauth2/authorize?response_type=code&client_id=client&redirect_uri=http://127.0.0.1:8080/login/oauth2/code/client&scope=openid%20profile%20read%20write&state=xyz123
+  ─────────────────────────────────────────────────────────────
+    → Log in with  user / password
+    → Approve all scopes on the consent page
+    → Browser redirects to:
+      http://127.0.0.1:8080/login/oauth2/code/client?code=<CODE>&state=xyz123
+    → Copy <CODE> from the URL
+
+  8b. Exchange the authorization code for tokens (cURL):
+  ─────────────────────────────────────────────────────────────
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=authorization_code" \
+  -d "code=<CODE>" \
+  -d "redirect_uri=http://127.0.0.1:8080/login/oauth2/code/client" \
+  | python -m json.tool
+
+# Expected response:
+# {
+#   "access_token" : "<JWT>",     ← scoped to the authenticated user
+#   "refresh_token": "<TOKEN>",
+#   "id_token"     : "<JWT>",     ← OIDC identity token
+#   "token_type"   : "Bearer",
+#   "expires_in"   : 1799,
+#   "scope"        : "openid profile read write"
+# }
+
+  ► Save the new access_token — sub will be "user" (not "client")
+
+  8c. Call resource server with the user-scoped token:
+  ─────────────────────────────────────────────────────────────
+curl -s http://localhost:8090/api/resources \
+  -H "Authorization: Bearer <USER_ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# accessedBy will now be "user" instead of "client"
+
+curl -s http://localhost:8090/api/me \
+  -H "Authorization: Bearer <USER_ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# authorities will contain ["ROLE_USER"] (from the JWT token customizer)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 9 — Refresh Token (exchange refresh_token for new JWT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Use the refresh_token from Step 8b
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=refresh_token" \
+  -d "refresh_token=<REFRESH_TOKEN>" \
+  | python -m json.tool
+
+# Expected: new access_token + new refresh_token
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 10 — Token Introspection (auth server validates a token)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl -s -X POST http://localhost:9000/oauth2/introspect \
+  -u client:secret \
+  -d "token=<ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# Expected (active token):
+# {
+#   "active"    : true,
+#   "sub"       : "client",
+#   "client_id" : "client",
+#   "scope"     : "read write",
+#   "exp"       : 1234567890,
+#   "token_type": "Bearer"
+# }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 11 — OIDC UserInfo endpoint (requires openid scope)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Use the user-scoped token from Step 8b (must have openid scope)
+curl -s http://localhost:9000/userinfo \
+  -H "Authorization: Bearer <USER_ACCESS_TOKEN>" \
+  | python -m json.tool
+
+# Expected: { "sub": "user", ... }
+# NOTE: client_credentials tokens do NOT have openid scope — use auth_code token here
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 12 — Revoke a token, then verify it is rejected
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Revoke the token
+curl -s -X POST http://localhost:9000/oauth2/revoke \
+  -u client:secret \
+  -d "token=<ACCESS_TOKEN>"
+
+# Verify resource server rejects it (expect 401)
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
+  http://localhost:8090/api/resources \
+  -H "Authorization: Bearer <ACCESS_TOKEN>"
+
+# NOTE: The resource server validates JWTs locally using the JWK Set.
+# A revoked JWT will still pass signature validation until it expires.
+# To enforce revocation, the resource server must use token introspection.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 13 — Test client-app endpoints (browser-based session)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# The client-app uses browser sessions (OAuth2 Login).
+# Open a browser and navigate in this order:
+
+  1. http://localhost:8080/
+     → Redirected to http://localhost:9000/oauth2/authorize
+     → Log in: user / password
+     → Approve scopes
+     → Redirected back → shows: { "message": "Welcome...", "username": "user", ... }
+
+  2. http://localhost:8080/resources
+     → client-app fetches token from session, calls resource server
+     → Returns JSON list of resources from http://localhost:8090/api/resources
+
+  3. http://localhost:8080/me
+     → client-app fetches token from session, calls resource server
+     → Returns JWT claims from http://localhost:8090/api/me
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE — Port & endpoint map
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  oauth-server (9000)
+  ├── GET  /.well-known/openid-configuration  discovery metadata
+  ├── GET  /oauth2/jwks                       public keys
+  ├── GET  /oauth2/authorize                  start auth_code flow (browser)
+  ├── POST /oauth2/token                      get/refresh token
+  ├── POST /oauth2/introspect                 inspect token
+  ├── POST /oauth2/revoke                     revoke token
+  └── GET  /userinfo                          OIDC user info (Bearer)
+
+  resource-server (8090)
+  ├── GET  /api/resources                     protected list (Bearer JWT)
+  └── GET  /api/me                            JWT claims info (Bearer JWT)
+
+  client-app (8080)
+  ├── GET  /                                  home — current user info (browser)
+  ├── GET  /resources                         → calls resource-server (browser)
+  └── GET  /me                                → calls resource-server (browser)
+
+================================================================

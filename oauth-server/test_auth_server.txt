@@ -1,0 +1,109 @@
+=============================================================
+  OAuth2 Authorization Server - cURL Test Commands
+  Server : http://localhost:9000
+  Client : client / secret
+  User   : user / password
+=============================================================
+
+-------------------------------------------------------------
+1. DISCOVERY  — OpenID Connect metadata
+-------------------------------------------------------------
+curl -s http://localhost:9000/.well-known/openid-configuration | python -m json.tool
+
+
+-------------------------------------------------------------
+2. JWK SET  — public keys used to verify JWT signatures
+-------------------------------------------------------------
+curl -s http://localhost:9000/oauth2/jwks | python -m json.tool
+
+
+-------------------------------------------------------------
+3. CLIENT CREDENTIALS GRANT
+   (machine-to-machine, no user involved)
+-------------------------------------------------------------
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=client_credentials&scope=read write" \
+  | python -m json.tool
+
+# Response contains:  access_token (JWT), token_type, expires_in, scope
+
+
+-------------------------------------------------------------
+4. AUTHORIZATION CODE GRANT  (step 1 — open in browser)
+-------------------------------------------------------------
+# Paste this URL in a browser, log in as user/password, approve scopes:
+http://localhost:9000/oauth2/authorize?response_type=code&client_id=client&redirect_uri=http://127.0.0.1:8080/login/oauth2/code/client&scope=openid%20profile%20read%20write&state=abc123
+
+# After approval the browser redirects to:
+#   http://127.0.0.1:8080/login/oauth2/code/client?code=<CODE>&state=abc123
+# Copy <CODE> and use it in step 2 below.
+
+
+-------------------------------------------------------------
+5. AUTHORIZATION CODE GRANT  (step 2 — exchange code for tokens)
+-------------------------------------------------------------
+# Replace <CODE> with the value obtained in step 4
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=authorization_code" \
+  -d "code=<CODE>" \
+  -d "redirect_uri=http://127.0.0.1:8080/login/oauth2/code/client" \
+  | python -m json.tool
+
+# Response contains:  access_token (JWT), refresh_token, id_token (OIDC), expires_in
+
+
+-------------------------------------------------------------
+6. REFRESH TOKEN GRANT
+-------------------------------------------------------------
+# Replace <REFRESH_TOKEN> with the value from step 5
+curl -s -X POST http://localhost:9000/oauth2/token \
+  -u client:secret \
+  -d "grant_type=refresh_token" \
+  -d "refresh_token=<REFRESH_TOKEN>" \
+  | python -m json.tool
+
+
+-------------------------------------------------------------
+7. TOKEN INTROSPECTION  — inspect any token
+-------------------------------------------------------------
+# Replace <ACCESS_TOKEN> with a token obtained above
+curl -s -X POST http://localhost:9000/oauth2/introspect \
+  -u client:secret \
+  -d "token=<ACCESS_TOKEN>" \
+  | python -m json.tool
+
+
+-------------------------------------------------------------
+8. TOKEN REVOCATION
+-------------------------------------------------------------
+# Replace <TOKEN> with the token to revoke
+curl -s -X POST http://localhost:9000/oauth2/revoke \
+  -u client:secret \
+  -d "token=<TOKEN>"
+
+
+-------------------------------------------------------------
+9. OIDC USER INFO  (requires access_token with openid scope)
+-------------------------------------------------------------
+# Replace <ACCESS_TOKEN> with a token that has the openid scope
+curl -s http://localhost:9000/userinfo \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  | python -m json.tool
+
+
+-------------------------------------------------------------
+10. DECODE JWT PAYLOAD  (base64, no verification)
+-------------------------------------------------------------
+# Replace <ACCESS_TOKEN> with any JWT access token
+# On Linux/Mac:
+echo "<ACCESS_TOKEN>" | cut -d. -f2 | base64 -d 2>/dev/null | python -m json.tool
+
+# On Windows PowerShell:
+# $token = "<ACCESS_TOKEN>"
+# $payload = $token.Split('.')[1]
+# $padded = $payload.PadRight($payload.Length + (4 - $payload.Length % 4) % 4, '=')
+# [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($padded)) | python -m json.tool
+
+=============================================================
