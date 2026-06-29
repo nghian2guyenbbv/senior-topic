@@ -1,0 +1,49 @@
+- route:
+    id: jsonToXmlRoute
+    from:
+      uri: "direct:jsonToXml"
+      steps:
+        - unmarshal:
+            json:
+              unmarshalType: "com.example.demo.model.Order"
+        - marshal:
+            jacksonXml: {}
+
+- route:
+    id: xmlToJsonRoute
+    from:
+      uri: "direct:xmlToJson"
+      steps:
+        - unmarshal:
+            jacksonXml:
+              unmarshalType: "com.example.demo.model.Order"
+        - marshal:
+            json: {}
+
+- route:
+    id: jsonToCXmlRoute
+    from:
+      uri: "direct:jsonToCXml"
+      steps:
+        - unmarshal:
+            json:
+              unmarshalType: "com.example.demo.model.Order"
+        - bean:
+            ref: "orderCXmlTransformer"
+            method: "toCXml"
+        - marshal:
+            jacksonXml: {}
+
+- route:
+    id: cXmlToJsonRoute
+    from:
+      uri: "direct:cXmlToJson"
+      steps:
+        - unmarshal:
+            jacksonXml:
+              unmarshalType: "com.example.demo.model.cxml.CXmlDocument"
+        - bean:
+            ref: "orderCXmlTransformer"
+            method: "toOrder"
+        - marshal:
+            json: {}
