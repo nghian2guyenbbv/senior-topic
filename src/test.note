@@ -65,3 +65,84 @@ curl -X POST http://localhost:8080/orders/json \
       <Amount>2029.97</Amount>
     </Payment>
   </Order>'
+
+### JSON -> cXML
+curl -X POST http://localhost:8080/orders/cxml \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/xml" \
+  -d '{
+    "orderId": "ORD-001",
+    "orderDate": "2026-06-29",
+    "status": "PENDING",
+    "customer": {
+      "customerId": "CUST-001",
+      "name": "Alice Smith",
+      "email": "alice@example.com",
+      "address": {
+        "street": "123 Main St",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "US"
+      }
+    },
+    "items": [
+      { "itemId": "ITEM-001", "productName": "Laptop", "quantity": 2, "unitPrice": 999.99 },
+      { "itemId": "ITEM-002", "productName": "Mouse",  "quantity": 1, "unitPrice": 29.99  }
+    ],
+    "payment": { "method": "CREDIT_CARD", "cardLastFour": "1234", "amount": 2029.97 }
+  }'
+
+### cXML -> JSON
+curl -X POST http://localhost:8080/orders/json-from-cxml \
+  -H "Content-Type: application/xml" \
+  -H "Accept: application/json" \
+  -d '<cXML payloadID="ORD-001.001@example.com" timestamp="2026-06-29T00:00:00+07:00" version="1.2.014">
+    <Header>
+      <From><Credential domain="NetworkId"><Identity>buyer@example.com</Identity></Credential></From>
+      <To><Credential domain="NetworkId"><Identity>supplier@example.com</Identity></Credential></To>
+      <Sender>
+        <Credential domain="NetworkId"><Identity>CUST-001</Identity></Credential>
+        <UserAgent>APA-Camel-Ex 1.0</UserAgent>
+      </Sender>
+    </Header>
+    <Request deploymentMode="production">
+      <OrderRequest>
+        <OrderRequestHeader orderID="ORD-001" orderDate="2026-06-29" type="new">
+          <Total><Money currency="USD">2029.97</Money></Total>
+          <ShipTo>
+            <Address>
+              <Name>Alice Smith</Name>
+              <PostalAddress>
+                <Street>123 Main St</Street>
+                <City>New York</City>
+                <State>NY</State>
+                <PostalCode>10001</PostalCode>
+                <Country>US</Country>
+              </PostalAddress>
+            </Address>
+          </ShipTo>
+          <Contact role="endUser">
+            <Name>Alice Smith</Name>
+            <Email>alice@example.com</Email>
+          </Contact>
+        </OrderRequestHeader>
+        <ItemOut quantity="2" lineNumber="1">
+          <ItemID><SupplierPartID>ITEM-001</SupplierPartID></ItemID>
+          <ItemDetail>
+            <UnitPrice><Money currency="USD">999.99</Money></UnitPrice>
+            <Description>Laptop</Description>
+            <UnitOfMeasure>EA</UnitOfMeasure>
+          </ItemDetail>
+        </ItemOut>
+        <ItemOut quantity="1" lineNumber="2">
+          <ItemID><SupplierPartID>ITEM-002</SupplierPartID></ItemID>
+          <ItemDetail>
+            <UnitPrice><Money currency="USD">29.99</Money></UnitPrice>
+            <Description>Mouse</Description>
+            <UnitOfMeasure>EA</UnitOfMeasure>
+          </ItemDetail>
+        </ItemOut>
+      </OrderRequest>
+    </Request>
+  </cXML>'

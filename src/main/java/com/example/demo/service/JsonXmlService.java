@@ -19,4 +19,12 @@ public class JsonXmlService {
     public String toJson(String xml) {
         return producerTemplate.requestBody("direct:xmlToJson", xml, String.class);
     }
+
+    public String toCXml(String json) {
+        return producerTemplate.requestBody("direct:jsonToCXml", json, String.class);
+    }
+
+    public String fromCXml(String cxml) {
+        return producerTemplate.requestBody("direct:cXmlToJson", cxml, String.class);
+    }
 }
