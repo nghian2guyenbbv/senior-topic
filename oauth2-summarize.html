@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OAuth2 Summary</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #5c8aff;
+      --accent2: #a78bfa;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --code-bg: #111827;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      padding: 40px 20px 80px;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Section ── */
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
+    section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    section h2 .icon { font-size: 1.2rem; }
+
+    /* ── Components chips ── */
+    .chips { display: flex; gap: 12px; flex-wrap: wrap; }
+    .chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 6px 18px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--accent2);
+    }
+
+    /* ── Flow steps ── */
+    .flow { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 18px;
+      top: 38px;
+      bottom: -16px;
+      width: 2px;
+      background: var(--border);
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      margin-top: 4px;
+    }
+    .step-body { padding-bottom: 24px; flex: 1; }
+    .step-body p { color: var(--text); }
+    .step-body .sub { margin-top: 8px; padding-left: 16px; border-left: 2px solid var(--border); }
+    .step-body .sub li { list-style: none; color: var(--muted); font-size: 0.9rem; margin-bottom: 4px; }
+    .step-body .sub li strong { color: var(--text); }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    .badge.opaque { background: #2d1f00; color: var(--yellow); border: 1px solid #6b4700; }
+    .badge.jwt    { background: #0d2b1a; color: var(--green);  border: 1px solid #1a5c36; }
+
+    /* ── Warning box ── */
+    .callout {
+      background: #1e1a00;
+      border: 1px solid #6b4700;
+      border-left: 4px solid var(--yellow);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      color: #f5d97a;
+      font-size: 0.9rem;
+    }
+    .callout strong { color: var(--yellow); }
+
+    /* ── Setup steps ── */
+    .setup-step {
+      margin-bottom: 28px;
+    }
+    .setup-step:last-child { margin-bottom: 0; }
+    .setup-step h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 99px;
+    }
+
+    /* ── Dep table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead tr { background: var(--surface2); }
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { color: var(--accent2); font-weight: 600; white-space: nowrap; }
+    .dep-tag {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: var(--green);
+      margin: 2px 4px 2px 0;
+    }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin-top: 10px;
+      white-space: pre;
+    }
+    .kw  { color: #c792ea; }
+    .cls { color: #82aaff; }
+    .str { color: #c3e88d; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .ann { color: #ffcb6b; }
+    .fn  { color: #82aaff; }
+    .num { color: #f78c6c; }
+    .yml-key   { color: var(--accent); }
+    .yml-val   { color: var(--green); }
+
+    /* ── Config card grid ── */
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .config-grid { grid-template-columns: 1fr; } }
+    .config-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+    .config-card h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent2);
+      margin-bottom: 10px;
+      font-family: 'Cascadia Code', monospace;
+    }
+    .config-card ul { padding-left: 18px; }
+    .config-card li {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .config-card li strong { color: var(--text); }
+    .config-card .order-badge {
+      font-size: 0.7rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--yellow);
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>OAuth2 Summary</h1>
+    <p>Spring Security · Authorization Server · Resource Server · Client</p>
+  </header>
+
+  <!-- ── Components ── -->
+  <section>
+    <h2><span class="icon">🧩</span> Components</h2>
+    <div class="chips">
+      <div class="chip">Client App</div>
+      <div class="chip">Authorization Server</div>
+      <div class="chip">Resource Server</div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section>
+    <h2><span class="icon">⚙️</span> How It Works</h2>
+    <div class="flow">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <p>Client redirects the user to the <strong>Authorization Server</strong> to request a token.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <p>Authorization Server authenticates the user and issues a token.</p>
+          <ul class="sub">
+            <li><span class="badge opaque">Opaque</span> — a random reference string, meaning is opaque to the client</li>
+            <li><span class="badge jwt">JWT</span> — a self-contained, signed token carrying claims</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <p>Client sends a request to the <strong>Resource Server</strong> with the token in the <code>Authorization: Bearer</code> header.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <p>Resource Server validates the token based on its type:</p>
+          <ul class="sub">
+            <li><span class="badge opaque">Opaque</span> Calls <strong>/oauth2/introspect</strong> on the Authorization Server to validate</li>
+            <li><span class="badge jwt">JWT</span> <strong>Stateless</strong> — validates locally using the public key from the Authorization Server's <strong>JWK Set</strong> (<code>/.well-known/jwks.json</code>)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <p>Resource Server returns the protected resource if the token is valid.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout">
+      <strong>⚠️ Key point:</strong> The Resource Server does <strong>not</strong> forward the token request to the Authorization Server.
+      Token <em>issuance</em> happens directly between the <strong>Client</strong> and the <strong>Authorization Server</strong>.
+      The Resource Server only contacts the Authorization Server during token <em>validation</em> (opaque tokens only).
+    </div>
+  </section>
+
+  <!-- ── Setup ── -->
+  <section>
+    <h2><span class="icon">🛠️</span> Setup Step by Step</h2>
+
+    <!-- Step 1 -->
+    <div class="setup-step">
+      <h3><span class="step-badge">1</span> Create 3 Modules</h3>
+      <div class="chips">
+        <div class="chip">oauth-server</div>
+        <div class="chip">client-app</div>
+        <div class="chip">resource-server</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="setup-step">
+      <h3><span class="step-badge">2</span> Dependencies per Module</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Dependencies</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>oauth-server</td>
+            <td>
+              <span class="dep-tag">spring-boot-starter-security</span>
+              <span class="dep-tag">spring-security-oauth2-authorization-server</span>
+            </td>
+          </tr>
+          <tr>
+            <td>resource-server</td>
+            <td>
+              <span class="dep-tag">spring-boot-starter-security</span>
+              <span class="dep-tag">spring-boot-starter-oauth2-resource-server</span>
+            </td>
+          </tr>
+          <tr>
+            <td>client-app</td>
+            <td>
+              <span class="dep-tag">spring-boot-starter-security</span>
+              <span class="dep-tag">spring-boot-starter-oauth2-client</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Step 3: Client -->
+    <div class="setup-step">
+      <h3><span class="step-badge">3</span> Client — <code>ClientSecurityConfig</code></h3>
+      <div class="code-block"><span class="ann">@Configuration</span>
+<span class="ann">@EnableWebSecurity</span>
+<span class="kw">public class</span> <span class="cls">ClientSecurityConfig</span> {
+
+  <span class="ann">@Bean</span>
+  <span class="kw">public</span> <span class="cls">SecurityFilterChain</span> <span class="fn">securityFilterChain</span>(<span class="cls">HttpSecurity</span> http) <span class="kw">throws</span> <span class="cls">Exception</span> {
+    http.<span class="fn">authorizeHttpRequests</span>(auth -> auth.<span class="fn">anyRequest</span>().<span class="fn">authenticated</span>())
+        .<span class="fn">oauth2Login</span>(<span class="cls">Customizer</span>.<span class="fn">withDefaults</span>())   <span class="cmt">// handles login via Authorization Server</span>
+        .<span class="fn">oauth2Client</span>(<span class="cls">Customizer</span>.<span class="fn">withDefaults</span>()); <span class="cmt">// manages token storage</span>
+    <span class="kw">return</span> http.<span class="fn">build</span>();
+  }
+}</div>
+      <div class="code-block"><span class="cmt"># application.yml</span>
+<span class="yml-key">spring.security.oauth2.client:</span>
+  <span class="yml-key">registration.auth-server:</span>
+    <span class="yml-key">client-id:</span>          <span class="yml-val">client</span>
+    <span class="yml-key">client-secret:</span>      <span class="yml-val">secret</span>
+    <span class="yml-key">authorization-grant-type:</span> <span class="yml-val">authorization_code</span>
+    <span class="yml-key">scope:</span>              <span class="yml-val">openid, profile, read, write</span>
+    <span class="yml-key">redirect-uri:</span>       <span class="yml-val">http://127.0.0.1:8080/login/oauth2/code/client</span>
+  <span class="yml-key">provider.auth-server:</span>
+    <span class="yml-key">issuer-uri:</span>         <span class="yml-val">http://localhost:9000</span></div>
+    </div>
+
+    <!-- Step 4: Resource Server -->
+    <div class="setup-step">
+      <h3><span class="step-badge">4</span> Resource Server — <code>ResourceServerSecurityConfig</code></h3>
+      <div class="code-block"><span class="ann">@Configuration</span>
+<span class="ann">@EnableWebSecurity</span>
+<span class="kw">public class</span> <span class="cls">ResourceServerSecurityConfig</span> {
+
+  <span class="ann">@Bean</span>
+  <span class="kw">public</span> <span class="cls">SecurityFilterChain</span> <span class="fn">securityFilterChain</span>(<span class="cls">HttpSecurity</span> http) <span class="kw">throws</span> <span class="cls">Exception</span> {
+    http.<span class="fn">authorizeHttpRequests</span>(auth -> auth.<span class="fn">anyRequest</span>().<span class="fn">authenticated</span>())
+        .<span class="fn">oauth2ResourceServer</span>(rs -> rs.<span class="fn">jwt</span>(jwt ->
+            jwt.<span class="fn">jwtAuthenticationConverter</span>(<span class="fn">jwtAuthenticationConverter</span>())))
+        .<span class="fn">sessionManagement</span>(s -> s.<span class="fn">sessionCreationPolicy</span>(<span class="cls">SessionCreationPolicy</span>.STATELESS));
+    <span class="kw">return</span> http.<span class="fn">build</span>();
+  }
+
+  <span class="ann">@Bean</span>
+  <span class="kw">public</span> <span class="cls">JwtAuthenticationConverter</span> <span class="fn">jwtAuthenticationConverter</span>() {
+    <span class="cls">JwtGrantedAuthoritiesConverter</span> converter = <span class="kw">new</span> <span class="cls">JwtGrantedAuthoritiesConverter</span>();
+    converter.<span class="fn">setAuthoritiesClaimName</span>(<span class="str">"authorities"</span>); <span class="cmt">// maps custom claim → GrantedAuthority</span>
+    converter.<span class="fn">setAuthorityPrefix</span>(<span class="str">""</span>);
+    <span class="cls">JwtAuthenticationConverter</span> jwtConverter = <span class="kw">new</span> <span class="cls">JwtAuthenticationConverter</span>();
+    jwtConverter.<span class="fn">setJwtGrantedAuthoritiesConverter</span>(converter);
+    <span class="kw">return</span> jwtConverter;
+  }
+}</div>
+      <div class="code-block"><span class="cmt"># application.yml</span>
+<span class="yml-key">spring.security.oauth2.resourceserver.jwt:</span>
+  <span class="yml-key">issuer-uri:</span>   <span class="yml-val">http://localhost:9000</span>
+  <span class="yml-key">jwk-set-uri:</span>  <span class="yml-val">http://localhost:9000/oauth2/jwks</span></div>
+    </div>
+
+    <!-- Step 5: Authorization Server -->
+    <div class="setup-step">
+      <h3><span class="step-badge">5</span> Authorization Server</h3>
+
+      <div class="config-grid">
+
+        <div class="config-card">
+          <h4>AuthorizationServerConfig</h4>
+          <ul>
+            <li><strong>RegisteredClientRepository</strong> — client-id, client-secret, grant types, scopes, token settings</li>
+            <li><strong>TokenSettings</strong> — format: <code>SELF_CONTAINED</code> (JWT), access TTL: 30 min, refresh TTL: 1 day</li>
+            <li><strong>JWKSource</strong> — generates RSA-2048 key pair for JWT signing</li>
+            <li><strong>JwtDecoder</strong> — decodes JWT using the JWKSource</li>
+            <li><strong>AuthorizationServerSettings</strong> — sets issuer URI (<code>http://localhost:9000</code>)</li>
+            <li><strong>OAuth2TokenCustomizer</strong> — adds <code>authorities</code> claim to JWT access token</li>
+          </ul>
+        </div>
+
+        <div class="config-card">
+          <h4>SecurityConfig <small>@EnableWebSecurity</small></h4>
+          <ul>
+            <li>
+              <strong>authorizationServerSecurityFilterChain</strong>
+              <span class="order-badge">@Order(1)</span><br>
+              Secures OAuth2/OIDC endpoints:<br>
+              <code>/oauth2/authorize</code>, <code>/oauth2/token</code>,<br>
+              <code>/.well-known/openid-configuration</code>
+            </li>
+            <li style="margin-top:8px">
+              <strong>defaultSecurityFilterChain</strong>
+              <span class="order-badge">@Order(2)</span><br>
+              Form login for all other endpoints
+            </li>
+            <li style="margin-top:8px"><strong>UserDetailsService</strong> — in-memory user store</li>
+            <li><strong>PasswordEncoder</strong> — delegating password encoder</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="code-block" style="margin-top:16px"><span class="cmt">// AuthorizationServerConfig.java — key beans</span>
+
+<span class="cls">RegisteredClient</span> client = <span class="cls">RegisteredClient</span>.<span class="fn">withId</span>(...)
+    .<span class="fn">clientId</span>(<span class="str">"client"</span>).<span class="fn">clientSecret</span>(<span class="str">"{noop}secret"</span>)
+    .<span class="fn">authorizationGrantType</span>(<span class="cls">AuthorizationGrantType</span>.AUTHORIZATION_CODE)
+    .<span class="fn">authorizationGrantType</span>(<span class="cls">AuthorizationGrantType</span>.REFRESH_TOKEN)
+    .<span class="fn">authorizationGrantType</span>(<span class="cls">AuthorizationGrantType</span>.CLIENT_CREDENTIALS)
+    .<span class="fn">scope</span>(<span class="cls">OidcScopes</span>.OPENID).<span class="fn">scope</span>(<span class="str">"read"</span>).<span class="fn">scope</span>(<span class="str">"write"</span>)
+    .<span class="fn">tokenSettings</span>(<span class="cls">TokenSettings</span>.<span class="fn">builder</span>()
+        .<span class="fn">accessTokenFormat</span>(<span class="cls">OAuth2TokenFormat</span>.SELF_CONTAINED) <span class="cmt">// JWT</span>
+        .<span class="fn">accessTokenTimeToLive</span>(<span class="cls">Duration</span>.<span class="fn">ofMinutes</span>(<span class="num">30</span>))
+        .<span class="fn">build</span>())
+    .<span class="fn">build</span>();
+
+<span class="cmt">// JWT customizer — injects user authorities into token claims</span>
+<span class="cls">OAuth2TokenCustomizer</span>&lt;<span class="cls">JwtEncodingContext</span>&gt; <span class="fn">jwtTokenCustomizer</span>() {
+    <span class="kw">return</span> context -> {
+        <span class="kw">if</span> (context.<span class="fn">getTokenType</span>().<span class="fn">getValue</span>().<span class="fn">equals</span>(<span class="str">"access_token"</span>))
+            context.<span class="fn">getClaims</span>().<span class="fn">claim</span>(<span class="str">"authorities"</span>, <span class="cmt">/* user's authorities list */</span>);
+    };
+}</div>
+    </div>
+
+  </section>
+
+  <!-- ── Flow Diagram ── -->
+  <section>
+    <h2><span class="icon">🔄</span> Flow Diagram</h2>
+    <div style="overflow-x:auto;">
+      <table style="min-width:560px; font-size:0.85rem; text-align:center;">
+        <thead>
+          <tr>
+            <th style="width:22%">Client App</th>
+            <th style="width:4%; color:var(--muted)"></th>
+            <th style="width:22%">Authorization Server</th>
+            <th style="width:4%; color:var(--muted)"></th>
+            <th style="width:22%">Resource Server</th>
+            <th style="width:4%; color:var(--muted)"></th>
+            <th style="width:22%">JWK Set Endpoint</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--accent2)">1. Redirect user →</td>
+            <td>→</td>
+            <td style="color:var(--green)">Authenticate &amp; issue token</td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent2)">← Token returned</td>
+            <td>←</td>
+            <td style="color:var(--green)">JWT / Opaque</td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent2)">2. Request + token →</td>
+            <td></td><td></td>
+            <td>→</td>
+            <td style="color:var(--yellow)">Validate token</td>
+            <td></td><td></td>
+          </tr>
+          <tr>
+            <td></td><td></td><td></td><td></td>
+            <td style="color:var(--yellow); font-size:0.78rem">JWT: fetch public key →</td>
+            <td>→</td>
+            <td style="color:var(--muted)">/oauth2/jwks</td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent2)">← Protected resource</td>
+            <td></td><td></td>
+            <td>←</td>
+            <td style="color:var(--yellow)">Return resource</td>
+            <td></td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
