@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.model.json.OrderRequest;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +12,11 @@ public class JsonXmlService {
         this.producerTemplate = producerTemplate;
     }
 
-    public String convert(OrderRequest request) {
-        return producerTemplate.requestBody("direct:jsonToXml", request, String.class);
+    public String toXml(String json) {
+        return producerTemplate.requestBody("direct:jsonToXml", json, String.class);
+    }
+
+    public String toJson(String xml) {
+        return producerTemplate.requestBody("direct:xmlToJson", xml, String.class);
     }
 }

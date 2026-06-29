@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.json.OrderRequest;
 import com.example.demo.service.JsonXmlService;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,8 +13,13 @@ public class OrderController {
         this.service = service;
     }
 
-    @PostMapping(value = "/xml", produces = "application/xml")
-    public String convert(@RequestBody OrderRequest request) {
-        return service.convert(request);
+    @PostMapping(value = "/xml", consumes = "application/json", produces = "application/xml")
+    public String toXml(@RequestBody String json) {
+        return service.toXml(json);
+    }
+
+    @PostMapping(value = "/json", consumes = "application/xml", produces = "application/json")
+    public String toJson(@RequestBody String xml) {
+        return service.toJson(xml);
     }
 }

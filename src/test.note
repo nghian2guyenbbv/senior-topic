@@ -1,1 +1,67 @@
-curl -X POST http://localhost:8080/orders/xml -H "Content-Type: application/json" -H "Accept: application/xml" -d "{\"orderId\": \"ORD-001\", \"customerName\": \"John Doe\"}"
+### JSON -> XML
+curl -X POST http://localhost:8080/orders/xml \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/xml" \
+  -d '{
+    "orderId": "ORD-001",
+    "orderDate": "2026-06-29",
+    "status": "PENDING",
+    "customer": {
+      "customerId": "CUST-001",
+      "name": "Alice Smith",
+      "email": "alice@example.com",
+      "address": {
+        "street": "123 Main St",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "US"
+      }
+    },
+    "items": [
+      { "itemId": "ITEM-001", "productName": "Laptop", "quantity": 2, "unitPrice": 999.99 },
+      { "itemId": "ITEM-002", "productName": "Mouse",  "quantity": 1, "unitPrice": 29.99  }
+    ],
+    "payment": { "method": "CREDIT_CARD", "cardLastFour": "1234", "amount": 2029.97 }
+  }'
+
+### XML -> JSON
+curl -X POST http://localhost:8080/orders/json \
+  -H "Content-Type: application/xml" \
+  -H "Accept: application/json" \
+  -d '<Order>
+    <OrderId>ORD-001</OrderId>
+    <OrderDate>2026-06-29</OrderDate>
+    <Status>PENDING</Status>
+    <Customer>
+      <CustomerId>CUST-001</CustomerId>
+      <FullName>Alice Smith</FullName>
+      <Email>alice@example.com</Email>
+      <ShippingAddress>
+        <Street>123 Main St</Street>
+        <City>New York</City>
+        <State>NY</State>
+        <ZipCode>10001</ZipCode>
+        <Country>US</Country>
+      </ShippingAddress>
+    </Customer>
+    <Items>
+      <Item>
+        <ItemId>ITEM-001</ItemId>
+        <ProductName>Laptop</ProductName>
+        <Quantity>2</Quantity>
+        <UnitPrice>999.99</UnitPrice>
+      </Item>
+      <Item>
+        <ItemId>ITEM-002</ItemId>
+        <ProductName>Mouse</ProductName>
+        <Quantity>1</Quantity>
+        <UnitPrice>29.99</UnitPrice>
+      </Item>
+    </Items>
+    <Payment>
+      <Method>CREDIT_CARD</Method>
+      <CardLastFour>1234</CardLastFour>
+      <Amount>2029.97</Amount>
+    </Payment>
+  </Order>'
