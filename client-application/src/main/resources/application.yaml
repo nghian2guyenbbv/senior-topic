@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: client-application
+  security:
+    oauth2:
+      client:
+        registration:
+          auth-server:
+            client-id: client
+            client-secret: secret
+            authorization-grant-type: authorization-code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, read, write, profile
+            provider: auth-server
+
+        provider:
+          auth-server:
+            issuer-uri: http://localhost:9000
+server:
+  port: 8080
+resource-server:
+  base-url: http://localhost:8090
