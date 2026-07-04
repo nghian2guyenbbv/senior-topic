@@ -21,7 +21,7 @@ public class AuthorizeServerConfig {
   public RegisteredClientRepository registeredClientRepository() {
     RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
         .clientId("client")
-        .clientSecret("{noop}secrect")
+        .clientSecret("{noop}secret")
         .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
         .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

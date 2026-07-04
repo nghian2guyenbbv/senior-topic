@@ -1,5 +1,5 @@
 spring:
   application:
-    name: oauthorazation-server
+    name: oauth-server
 server:
   port: 9000

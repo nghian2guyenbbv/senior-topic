@@ -18,5 +18,6 @@ spring:
             issuer-uri: http://localhost:9000
 server:
   port: 8080
+
 resource-server:
   base-url: http://localhost:8090
