@@ -1,0 +1,7 @@
+$env:OLLAMA_HOST="127.0.0.1:11435"
+ollama serve
+
+
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+
+curl -X DELETE http://localhost:6333/collections/my-collection

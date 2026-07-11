@@ -1,0 +1,26 @@
+docker run -p 6333:6333 -p 6334:6334 \
+  -e QDRANT__SERVICE__API_KEY=your-secret-key-here \
+  qdrant/qdrant
+
+
+Qdarant colleciton is like table in relational database.
+
+
+-- Spring auto crrate the collecntion on startup ì innitialize-schema í enabled:
+   spring:
+     ai:
+       vectorstore:
+         qdrant:
+           collection-name: my-documents
+           initialize-schema: true  # auto-creates if not exists
+
+-- manual create collection
+
+   curl -X PUT http://localhost:6333/collections/my-documents \
+     -H "Content-Type: application/json" \
+     -d '{
+       "vectors": {
+         "size": 1536,
+         "distance": "Cosine"
+       }
+     }'

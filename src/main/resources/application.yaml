@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: rag-ollama
+  autoconfigure:
+    exclude: org.springframework.ai.vectorstore.azure.autoconfigure.AzureVectorStoreAutoConfiguration
+  ai:
+    ollama:
+      base-url: http://127.0.0.1:11435
+      chat:
+        model: llama2
+      embedding:
+        model: llama2
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: my-collection
+        initialize-schema: true
