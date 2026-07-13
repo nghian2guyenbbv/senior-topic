@@ -1,0 +1,5 @@
+$env:OLLAMA_HOST="127.0.0.1:11435"
+ollama serve
+
+
+curl --location 'http://localhost:9292/ai/prompt?message=what%20is%20diffenence%20GPT%20and%20you'
