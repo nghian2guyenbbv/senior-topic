@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: multi-agent-with-langchain
+langchain4j:
+  google-ai:
+    api-key: ${GEMINI_API_KEY}
+    chat-model:
+      model-name: gemini-2.5-flash
+      temperature: 0.7
+      log-request: true
+      log-response: true
