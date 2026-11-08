@@ -1,4 +1,5 @@
 package org.spring.multiagentwithlangchain.service;
 
-public class OrderAiService {
+@AIService
+public interface OrderService {
 }
